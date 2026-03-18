@@ -46,3 +46,48 @@ class DME_Teleport_Overhaul
         return serialized;
     }
 }
+
+class DME_Teleport_Constants
+{
+    static const int DME_TELEPORT_MENU = 35002;
+    static const string CONFIG_FOLDER = "$profile:DeadmansEcho/TeleportOverhaul";
+    static const string CONFIG_FILE = "$profile:DeadmansEcho/TeleportOverhaul/teleport_menu_config.json";
+    static const string PROHIBITED_ZONES_FILE = "$profile:DeadmansEcho/TeleportOverhaul/ProhibitedZones.json";
+    static const int TRAVEL_REQUEST_COOLDOWN_MS = 500;
+
+    static const ref array<string> PICTURE_TEXTURES = {
+        "",
+        "DME_Teleport_Overhaul/gui/assets/airport.edds",
+        "DME_Teleport_Overhaul/gui/assets/airport2.edds",
+        "DME_Teleport_Overhaul/gui/assets/baloon.edds",
+        "DME_Teleport_Overhaul/gui/assets/city.edds",
+        "DME_Teleport_Overhaul/gui/assets/fishing.edds",
+        "DME_Teleport_Overhaul/gui/assets/forest.edds",
+        "DME_Teleport_Overhaul/gui/assets/forest2.edds",
+        "DME_Teleport_Overhaul/gui/assets/galaxy.edds",
+        "DME_Teleport_Overhaul/gui/assets/landhouse.edds",
+        "DME_Teleport_Overhaul/gui/assets/landside.edds",
+        "DME_Teleport_Overhaul/gui/assets/mountains.edds",
+        "DME_Teleport_Overhaul/gui/assets/tisy.edds"
+    };
+
+    static string GetPictureTexture(int id)
+    {
+        if (!PICTURE_TEXTURES)
+            return string.Empty;
+
+        if (id < 0 || id >= PICTURE_TEXTURES.Count())
+            return string.Empty;
+
+        return PICTURE_TEXTURES[id];
+    }
+};
+
+class DME_Teleport_RPC
+{
+    static const string MOD_NAME = "DME_Teleport_Menu";
+    static const string TRAVEL_REQUEST = "RPC_TravelRequest";
+    static const string SYNC_REQUEST = "RPC_SyncRequest";
+    static const string SYNC_STATE = "RPC_SyncState";
+    static const string TRAVEL_RESULT = "RPC_TravelResult";
+};

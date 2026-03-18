@@ -1,0 +1,181 @@
+FrameWidgetClass RootFrame {
+ visible 1
+ position 0.25 0.05
+ size 0.5 0.79977
+ hexactpos 0
+ vexactpos 0
+ hexactsize 0
+ vexactsize 0
+ {
+  PanelWidgetClass Background {
+   ignorepointer 1
+   color 0.05 0.05 0.05 0.92
+   position 0 0
+   size 1 1.00046
+   hexactpos 0
+   vexactpos 0
+   hexactsize 0
+   vexactsize 0
+   style DayZDefaultPanelSides
+  }
+  TextWidgetClass TitleText {
+   ignorepointer 1
+   color 1 0.84 0 1
+   position 0 8
+   size 1 30
+   hexactpos 0
+   vexactpos 1
+   hexactsize 0
+   vexactsize 1
+   text "Psyerns Teleport"
+   font "gui/fonts/etelkatextpro22"
+   "exact text" 1
+   "exact text size" 30
+   "text halign" center
+   "text valign" center
+  }
+  TextWidgetClass ReputationText {
+   ignorepointer 1
+   color 0.9 0.9 0.9 1
+   position 0.02 42
+   size 0.96 24
+   hexactpos 0
+   vexactpos 1
+   hexactsize 0
+   vexactsize 1
+   text "Reputation: ---"
+   font "gui/fonts/etelkatextpro"
+   "exact text" 1
+   "exact text size" 30
+   "text halign" left
+   "text valign" center
+  }
+  TextWidgetClass StatusText {
+   ignorepointer 1
+   color 0.9 0.8 0.2 1
+   position 0.02 68
+   size 0.96 20
+   hexactpos 0
+   vexactpos 1
+   hexactsize 0
+   vexactsize 1
+   text ""
+   font "gui/fonts/etelkatextpro"
+   "exact text" 1
+   "exact text size" 30
+   "text halign" center
+   "text valign" center
+  }
+  PanelWidgetClass HeaderRow {
+   ignorepointer 1
+   position 0.01 92
+   size 0.98 22
+   hexactpos 0
+   vexactpos 1
+   hexactsize 0
+   vexactsize 1
+   {
+    TextWidgetClass HeaderName {
+     ignorepointer 1
+     color 0.6 0.6 0.6 1
+     position 0.02 0
+     size 0.3 1
+     hexactpos 0
+     vexactpos 0
+     hexactsize 0
+     vexactsize 0
+     text "Destination"
+     font "gui/fonts/etelkatextpro"
+     "exact text" 1
+     "exact text size" 30
+     "text halign" left
+     "text valign" center
+    }
+    TextWidgetClass HeaderCost {
+     ignorepointer 1
+     color 0.6 0.6 0.6 1
+     position 0.34 0
+     size 0.14 1
+     hexactpos 0
+     vexactpos 0
+     hexactsize 0
+     vexactsize 0
+     text "Reputation"
+     font "gui/fonts/etelkatextpro"
+     "exact text" 1
+     "exact text size" 30
+     "text halign" center
+     "text valign" center
+    }
+    TextWidgetClass HeaderCooldown {
+     ignorepointer 1
+     color 0.6 0.6 0.6 1
+     position 0.5 0
+     size 0.2 1
+     hexactpos 0
+     vexactpos 0
+     hexactsize 0
+     vexactsize 0
+     text "Cooldown"
+     font "gui/fonts/etelkatextpro"
+     "exact text" 1
+     "exact text size" 30
+     "text halign" center
+     "text valign" center
+    }
+    TextWidgetClass HeaderAction {
+     ignorepointer 1
+     color 0.6 0.6 0.6 1
+     position 0.72 0
+     size 0.26 1
+     hexactpos 0
+     vexactpos 0
+     hexactsize 0
+     vexactsize 0
+     text "Action"
+     font "gui/fonts/etelkatextpro"
+     "exact text" 1
+     "exact text size" 30
+     "text halign" center
+     "text valign" center
+    }
+   }
+  }
+  ScrollWidgetClass DestinationScroll {
+   ignorepointer 0
+   position 0.01 118
+   size 0.98 0.78836
+   hexactpos 0
+   vexactpos 1
+   hexactsize 0
+   vexactsize 0
+   "Scrollbar V" 1
+   {
+    WrapSpacerWidgetClass DestinationContent {
+     ignorepointer 1
+     position 0 0
+     size 1 1
+     hexactpos 0
+     vexactpos 0
+     hexactsize 0
+     vexactsize 0
+     Margin 2
+     "Size To Content V" 1
+    }
+   }
+  }
+  ButtonWidgetClass CloseButton {
+   color 1 1 1 1
+   position 0 0.0375
+   size 0.23843 25.6698
+   halign center_ref
+   valign bottom_ref
+   hexactpos 0
+   vexactpos 0
+   hexactsize 0
+   vexactsize 1
+   text "Close"
+   font "gui/fonts/etelkatextpro"
+  }
+ }
+}

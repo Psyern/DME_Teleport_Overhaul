@@ -146,6 +146,8 @@ class DME_TeleportLoadingScreen
 modded class MissionGameplay
 {
     protected ref DME_TeleportLoadingScreen m_DME_TeleportLoadingScreen;
+	private ref DME_TeleportMenu m_DMETeleportMenu;
+	private bool m_DMETeleportMenuOpen;
 
     override void OnInit()
     {
@@ -153,6 +155,8 @@ modded class MissionGameplay
 
         if (!m_DME_TeleportLoadingScreen)
             m_DME_TeleportLoadingScreen = new DME_TeleportLoadingScreen();
+
+		m_DMETeleportMenuOpen = false;
 
         GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, this, SingeplayerExecutionType.Client);
     }
@@ -163,6 +167,60 @@ modded class MissionGameplay
 
         if (m_DME_TeleportLoadingScreen)
             m_DME_TeleportLoadingScreen.Update();
+    }
+
+    override void OnMissionFinish()
+    {
+        CloseDMETeleportMenu();
+        DME_TeleportManager.DestroyInstance();
+        super.OnMissionFinish();
+    }
+
+    override void OnKeyPress(int key)
+    {
+        super.OnKeyPress(key);
+
+        if (key == KeyCode.KC_F2)
+        {
+            if (m_DMETeleportMenuOpen)
+            {
+                CloseDMETeleportMenu();
+                return;
+            }
+
+            UIScriptedMenu topMenu = GetGame().GetUIManager().GetMenu();
+            if (topMenu)
+                return;
+
+            OpenDMETeleportMenu();
+        }
+    }
+
+    private void OpenDMETeleportMenu()
+    {
+        if (m_DMETeleportMenuOpen)
+            return;
+
+        PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
+        if (!player || !player.IsAlive())
+            return;
+
+        if (!m_DMETeleportMenu)
+            m_DMETeleportMenu = new DME_TeleportMenu();
+
+        GetGame().GetUIManager().ShowScriptedMenu(m_DMETeleportMenu, null);
+        m_DMETeleportMenuOpen = true;
+    }
+
+    private void CloseDMETeleportMenu()
+    {
+        if (!m_DMETeleportMenuOpen)
+            return;
+
+        if (m_DMETeleportMenu)
+            GetGame().GetUIManager().HideScriptedMenu(m_DMETeleportMenu);
+
+        m_DMETeleportMenuOpen = false;
     }
 
     void ShowTeleportLoadingScreen(CallType type, ParamsReadContext ctx, PlayerIdentity sender, Object target)

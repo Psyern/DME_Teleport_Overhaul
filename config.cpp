@@ -9,7 +9,8 @@ class CfgPatches
 		{
 			"DZ_Data",
 			"DZ_scripts",
-			"JM_CF_Scripts"
+			"JM_CF_Scripts",
+			"DayZExpansion_Hardline_Scripts"
 		};
 	};
 };
@@ -33,6 +34,7 @@ class CfgMods
 		type="mod";
 		dependencies[]=
 		{
+			"Game",
 			"World",
 			"Mission"
 		};
