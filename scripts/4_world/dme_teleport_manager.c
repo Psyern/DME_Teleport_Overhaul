@@ -116,6 +116,8 @@ class DME_TeleportManager
 		int newNextAvailable = currentTime + dest.CooldownSec;
 		SetCooldown(uid, dest.TeleportName, newNextAvailable);
 
+		vector markerPosition = player.GetPosition();
+
 		vector pos = dest.GetPosition();
 		if (pos[1] == 0)
 			pos[1] = GetGame().SurfaceY(pos[0], pos[2]);
@@ -128,7 +130,7 @@ class DME_TeleportManager
 		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_OverhaulTeleportHelper.TeleportPlayerWithSafety, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, player, safePos, dest.TeleportName, 0, true);
 
 		if (dest.Marker == 1 && sender && sender.GetName() != string.Empty)
-			GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_TeleportManager.BroadcastGUITeleportMarker, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, sender.GetName(), safePos);
+			GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_TeleportManager.BroadcastGUITeleportMarker, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, sender.GetName(), markerPosition);
 
 		int updatedRep = GetPlayerReputation(player);
 		Print("[DME_Teleport_Menu] Scheduled teleport for " + sender.GetName() + " (" + uid + ") to " + destName + " at " + safePos.ToString());

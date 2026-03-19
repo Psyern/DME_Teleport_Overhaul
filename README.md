@@ -127,7 +127,7 @@ Example:
 ### Marker Behavior
 
 - Markers are created only for teleports triggered through the F2 GUI menu
-- A marker shows the teleported player’s name at the destination position
+- A marker shows the teleported player’s name at the original position where the player stood before teleporting
 - Marker lifetime is 5 minutes
 - Marker becomes visible only when another player is within 10 meters of the marker position
 - `Marker = 1` is the default during migration from older menu config versions
