@@ -7,9 +7,13 @@ class DME_Teleport_Overhaul
     static const string LOG_FILE = "$profile:DeadmansEcho/TeleportOverhaul/Logs/teleport.log";
     static const string RPC_NAMESPACE = "DME_Teleport_Overhaul";
     static const string RPC_SHOW_LOADING_SCREEN = "ShowTeleportLoadingScreen";
+    static const string RPC_SHOW_TELEPORT_MARKER = "ShowTeleportMarker";
     static const int LOADING_SCREEN_DURATION_MS = 12000;
+    static const int GUI_TELEPORT_MARKER_DURATION_MS = 300000;
     static const float TELEPORT_SURFACE_OFFSET = 0.35;
     static const int TELEPORT_POSITION_RECHECK_DELAY_MS = 1200;
+    static const float GUI_TELEPORT_MARKER_VISIBILITY_RADIUS = 10.0;
+    static const float GUI_TELEPORT_MARKER_HEIGHT_OFFSET = 1.8;
 
     static void EnsureDirectories()
     {

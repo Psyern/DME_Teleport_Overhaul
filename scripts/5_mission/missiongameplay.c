@@ -143,11 +143,110 @@ class DME_TeleportLoadingScreen
     }
 }
 
+class DME_TeleportPlayerMarker
+{
+    protected Widget m_Root;
+    protected TextWidget m_NameText;
+    protected string m_PlayerName;
+    protected vector m_WorldPosition;
+    protected int m_ExpireTime;
+
+    void DME_TeleportPlayerMarker(string playerName, vector worldPosition, int durationMs)
+    {
+        m_PlayerName = playerName;
+        m_WorldPosition = worldPosition;
+        m_ExpireTime = GetGame().GetTime() + durationMs;
+    }
+
+    void EnsureLayout()
+    {
+        if (m_Root)
+            return;
+
+        m_Root = GetGame().GetWorkspace().CreateWidgets("DME_Teleport_Overhaul/gui/layouts/dme_teleport_player_marker.layout");
+        if (!m_Root)
+            return;
+
+        m_NameText = TextWidget.Cast(m_Root.FindAnyWidget("MarkerNameText"));
+        if (m_NameText)
+            m_NameText.SetText(m_PlayerName);
+
+        m_Root.Show(false);
+    }
+
+    bool Matches(string playerName, vector worldPosition)
+    {
+        if (m_PlayerName != playerName)
+            return false;
+
+        return vector.Distance(m_WorldPosition, worldPosition) <= 0.5;
+    }
+
+    void Refresh(string playerName, vector worldPosition, int durationMs)
+    {
+        m_PlayerName = playerName;
+        m_WorldPosition = worldPosition;
+        m_ExpireTime = GetGame().GetTime() + durationMs;
+
+        if (m_NameText)
+            m_NameText.SetText(m_PlayerName);
+    }
+
+    bool Update()
+    {
+        EnsureLayout();
+        if (!m_Root)
+            return false;
+
+        if (GetGame().GetTime() >= m_ExpireTime)
+        {
+            Destroy();
+            return false;
+        }
+
+        PlayerBase localPlayer = PlayerBase.Cast(GetGame().GetPlayer());
+        if (!localPlayer || !localPlayer.IsAlive())
+        {
+            m_Root.Show(false);
+            return true;
+        }
+
+        if (vector.Distance(localPlayer.GetPosition(), m_WorldPosition) > DME_Teleport_Overhaul.GUI_TELEPORT_MARKER_VISIBILITY_RADIUS)
+        {
+            m_Root.Show(false);
+            return true;
+        }
+
+        vector markerPosition = m_WorldPosition;
+        markerPosition[1] = markerPosition[1] + DME_Teleport_Overhaul.GUI_TELEPORT_MARKER_HEIGHT_OFFSET;
+        vector screenPosition = g_Game.GetScreenPosRelative(markerPosition);
+        if (screenPosition[0] >= 1 || screenPosition[0] <= 0 || screenPosition[1] >= 1 || screenPosition[1] <= 0 || screenPosition[2] <= 0)
+        {
+            m_Root.Show(false);
+            return true;
+        }
+
+        m_Root.SetPos(screenPosition[0] - 0.08, screenPosition[1] - 0.03);
+        m_Root.Show(true);
+        return true;
+    }
+
+    void Destroy()
+    {
+        if (m_Root)
+        {
+            m_Root.Unlink();
+            m_Root = null;
+        }
+    }
+}
+
 modded class MissionGameplay
 {
     protected ref DME_TeleportLoadingScreen m_DME_TeleportLoadingScreen;
 	private ref DME_TeleportMenu m_DMETeleportMenu;
 	private bool m_DMETeleportMenuOpen;
+    protected ref array<ref DME_TeleportPlayerMarker> m_DME_TeleportMarkers;
 
     override void OnInit()
     {
@@ -156,9 +255,13 @@ modded class MissionGameplay
         if (!m_DME_TeleportLoadingScreen)
             m_DME_TeleportLoadingScreen = new DME_TeleportLoadingScreen();
 
+		if (!m_DME_TeleportMarkers)
+			m_DME_TeleportMarkers = new array<ref DME_TeleportPlayerMarker>;
+
 		m_DMETeleportMenuOpen = false;
 
         GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, this, SingeplayerExecutionType.Client);
+		GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_MARKER, this, SingeplayerExecutionType.Client);
     }
 
     override void OnUpdate(float timeslice)
@@ -167,10 +270,13 @@ modded class MissionGameplay
 
         if (m_DME_TeleportLoadingScreen)
             m_DME_TeleportLoadingScreen.Update();
+
+		UpdateTeleportMarkers();
     }
 
     override void OnMissionFinish()
     {
+		ClearTeleportMarkers();
         CloseDMETeleportMenu();
         DME_TeleportManager.DestroyInstance();
         super.OnMissionFinish();
@@ -236,5 +342,59 @@ modded class MissionGameplay
             m_DME_TeleportLoadingScreen = new DME_TeleportLoadingScreen();
 
         m_DME_TeleportLoadingScreen.Show(data.param1, data.param2);
+    }
+
+    void ShowTeleportMarker(CallType type, ParamsReadContext ctx, PlayerIdentity sender, Object target)
+    {
+        if (type != CallType.Client)
+            return;
+
+        Param3<string, vector, int> data = new Param3<string, vector, int>(string.Empty, vector.Zero, 0);
+        if (!ctx.Read(data))
+            return;
+
+        if (!m_DME_TeleportMarkers)
+            m_DME_TeleportMarkers = new array<ref DME_TeleportPlayerMarker>;
+
+        for (int markerIndex = 0; markerIndex < m_DME_TeleportMarkers.Count(); markerIndex++)
+        {
+            DME_TeleportPlayerMarker existingMarker = m_DME_TeleportMarkers[markerIndex];
+            if (!existingMarker || !existingMarker.Matches(data.param1, data.param2))
+                continue;
+
+            existingMarker.Refresh(data.param1, data.param2, data.param3);
+            return;
+        }
+
+        m_DME_TeleportMarkers.Insert(new DME_TeleportPlayerMarker(data.param1, data.param2, data.param3));
+    }
+
+    protected void UpdateTeleportMarkers()
+    {
+        if (!m_DME_TeleportMarkers)
+            return;
+
+        for (int markerIndex = m_DME_TeleportMarkers.Count() - 1; markerIndex >= 0; markerIndex--)
+        {
+            DME_TeleportPlayerMarker marker = m_DME_TeleportMarkers[markerIndex];
+            if (marker && marker.Update())
+                continue;
+
+            m_DME_TeleportMarkers.Remove(markerIndex);
+        }
+    }
+
+    protected void ClearTeleportMarkers()
+    {
+        if (!m_DME_TeleportMarkers)
+            return;
+
+        foreach (DME_TeleportPlayerMarker marker : m_DME_TeleportMarkers)
+        {
+            if (marker)
+                marker.Destroy();
+        }
+
+        m_DME_TeleportMarkers.Clear();
     }
 }

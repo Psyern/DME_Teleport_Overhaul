@@ -127,9 +127,20 @@ class DME_TeleportManager
 
 		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_OverhaulTeleportHelper.TeleportPlayerWithSafety, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, player, safePos, dest.TeleportName, 0, true);
 
+		if (dest.Marker == 1 && sender && sender.GetName() != string.Empty)
+			GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_TeleportManager.BroadcastGUITeleportMarker, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, sender.GetName(), safePos);
+
 		int updatedRep = GetPlayerReputation(player);
 		Print("[DME_Teleport_Menu] Scheduled teleport for " + sender.GetName() + " (" + uid + ") to " + destName + " at " + safePos.ToString());
 		SendTravelResult(sender, true, "Teleporting to " + destName + "...", updatedRep, destName, newNextAvailable);
+	}
+
+	static void BroadcastGUITeleportMarker(string playerName, vector worldPosition)
+	{
+		if (playerName == string.Empty)
+			return;
+
+		GetRPCManager().SendRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_MARKER, new Param3<string, vector, int>(playerName, worldPosition, DME_Teleport_Overhaul.GUI_TELEPORT_MARKER_DURATION_MS), true);
 	}
 
 	void RPC_SyncRequest(CallType type, ParamsReadContext ctx, PlayerIdentity sender, Object target)

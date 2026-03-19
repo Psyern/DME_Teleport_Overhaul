@@ -5,11 +5,13 @@ class DME_TeleportDestination
 	int Cost;
 	int CooldownSec;
 	int Picture;
+	int Marker;
 
 	void DME_TeleportDestination()
 	{
 		TeleportPos = new array<float>;
 		Picture = 1;
+		Marker = 1;
 	}
 
 	vector GetPosition()
@@ -29,7 +31,7 @@ class DME_TeleportConfig
 
 	void DME_TeleportConfig()
 	{
-		Version = 2;
+		Version = 3;
 		RepMode = 1;
 		Destinations = new array<ref DME_TeleportDestination>;
 	}
@@ -74,6 +76,24 @@ class DME_TeleportConfigLoader
 				migrated = true;
 			}
 
+			if (config && config.Version < 3)
+			{
+				if (config.Destinations)
+				{
+					for (int markerIndex = 0; markerIndex < config.Destinations.Count(); markerIndex++)
+					{
+						DME_TeleportDestination markerDestination = config.Destinations[markerIndex];
+						if (!markerDestination)
+							continue;
+
+						markerDestination.Marker = 1;
+					}
+				}
+
+				config.Version = 3;
+				migrated = true;
+			}
+
 			if (config && config.Destinations && config.Destinations.Count() > 0)
 			{
 				if (migrated)
@@ -104,7 +124,7 @@ class DME_TeleportConfigLoader
 	static ref DME_TeleportConfig CreateDefaults()
 	{
 		ref DME_TeleportConfig config = new DME_TeleportConfig();
-		config.Version = 2;
+		config.Version = 3;
 		config.RepMode = 1;
 
 		ref DME_TeleportDestination greenMtn = new DME_TeleportDestination();
@@ -113,6 +133,7 @@ class DME_TeleportConfigLoader
 		greenMtn.Cost = 1200;
 		greenMtn.CooldownSec = 1700;
 		greenMtn.Picture = 1;
+		greenMtn.Marker = 1;
 
 		ref DME_TeleportDestination krasno = new DME_TeleportDestination();
 		krasno.TeleportName = "Krasno Airfield";
@@ -120,6 +141,7 @@ class DME_TeleportConfigLoader
 		krasno.Cost = 1800;
 		krasno.CooldownSec = 1500;
 		krasno.Picture = 2;
+		krasno.Marker = 1;
 
 		config.Destinations.Insert(greenMtn);
 		config.Destinations.Insert(krasno);
