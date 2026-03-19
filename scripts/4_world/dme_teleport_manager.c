@@ -123,17 +123,19 @@ class DME_TeleportManager
 			pos[1] = GetGame().SurfaceY(pos[0], pos[2]);
 
 		vector safePos = DME_OverhaulTeleportHelper.GetSafeTeleportPosition(pos, true);
+		GetRPCManager().SendRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_PARTICLE, new Param2<vector, int>(markerPosition, DME_Teleport_Overhaul.GUI_TELEPORT_PARTICLE_DURATION_MS), true);
+		DME_OverhaulTeleportHelper.BeginTeleportTransition(player, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS);
 
 		if (sender)
 			GetRPCManager().SendRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, new Param2<int, string>(DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, m_GlobalMenuPreloadObjectTypes), true, sender);
 
-		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_OverhaulTeleportHelper.TeleportPlayerWithSafety, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, player, safePos, dest.TeleportName, 0, true);
+		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_OverhaulTeleportHelper.TeleportPlayerWithSafety, DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS, false, player, safePos, dest.TeleportName, 0, true);
 
 		if (dest.Marker == 1 && sender && sender.GetName() != string.Empty)
-			GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_TeleportManager.BroadcastGUITeleportMarker, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, sender.GetName(), markerPosition);
+			GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_TeleportManager.BroadcastGUITeleportMarker, DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS, false, sender.GetName(), markerPosition);
 
 		int updatedRep = GetPlayerReputation(player);
-		Print("[DME_Teleport_Menu] Scheduled teleport for " + sender.GetName() + " (" + uid + ") to " + destName + " at " + safePos.ToString());
+		Print("[DME_Teleport_Menu] Scheduled teleport for " + sender.GetName() + " (" + uid + ") to " + destName + " at " + safePos.ToString() + " after " + DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS.ToString() + "ms while loading screen stays visible.");
 		SendTravelResult(sender, true, "Teleporting to " + destName + "...", updatedRep, destName, newNextAvailable);
 	}
 

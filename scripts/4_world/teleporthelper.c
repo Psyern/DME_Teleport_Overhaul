@@ -38,6 +38,25 @@ class DME_OverhaulTeleportHelper
         DME_OverhaulSetTeleportCooldown(teleportName, cooldownTime);
     }
 
+    static void BeginTeleportTransition(PlayerBase player, int durationMs)
+    {
+        if (!player)
+            return;
+
+        player.DME_OverhaulBeginTeleportTransition();
+
+        if (durationMs > 0)
+            GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(EndTeleportTransition, durationMs, false, player);
+    }
+
+    static void EndTeleportTransition(PlayerBase player)
+    {
+        if (!player)
+            return;
+
+        player.DME_OverhaulEndTeleportTransition();
+    }
+
     static vector GetSafeTeleportPosition(vector teleportPosition, bool useSurfaceSafety)
     {
         vector safePosition = teleportPosition;

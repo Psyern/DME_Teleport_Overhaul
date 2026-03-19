@@ -205,10 +205,11 @@ class DME_Teleport_OverhaulAction: ActionContinuousBase
 
                     // Телепортация игрока в случайную точку
                     if (player.GetIdentity()) {
+                        DME_OverhaulTeleportHelper.BeginTeleportTransition(player, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS);
                         GetRPCManager().SendRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, new Param2<int, string>(DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, preloadObjectTypes), true, player.GetIdentity());
                     }
 
-                    GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_OverhaulTeleportHelper.TeleportPlayerWithSafety, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, player, randomTeleportPosition, entry.TeleportName, entry.TeleportCooldownSeconds, entry.UseSurfaceSafety);
+                    GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_OverhaulTeleportHelper.TeleportPlayerWithSafety, DME_Teleport_Overhaul.ACTION_TELEPORT_DELAY_MS, false, player, randomTeleportPosition, entry.TeleportName, entry.TeleportCooldownSeconds, entry.UseSurfaceSafety);
                 } else {
                     // Уведомление о нехватке предмета
                     player.MessageStatus(entry.MissingItemMessage);

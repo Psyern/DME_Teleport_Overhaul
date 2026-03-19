@@ -241,12 +241,44 @@ class DME_TeleportPlayerMarker
     }
 }
 
+class DME_TeleportParticleEffect
+{
+    protected Particle m_Particle;
+    protected int m_ExpireTime;
+
+    void DME_TeleportParticleEffect(vector worldPosition, int durationMs)
+    {
+        m_ExpireTime = GetGame().GetTime() + durationMs;
+        m_Particle = Particle.PlayInWorld(ParticleList.DME_OVERHAUL_TELEPORT_PTC, worldPosition);
+    }
+
+    bool Update()
+    {
+        if (GetGame().GetTime() < m_ExpireTime)
+            return true;
+
+        Destroy();
+        return false;
+    }
+
+    void Destroy()
+    {
+        if (!m_Particle)
+            return;
+
+        m_Particle.Stop();
+        GetGame().ObjectDelete(m_Particle);
+        m_Particle = null;
+    }
+}
+
 modded class MissionGameplay
 {
     protected ref DME_TeleportLoadingScreen m_DME_TeleportLoadingScreen;
 	private ref DME_TeleportMenu m_DMETeleportMenu;
 	private bool m_DMETeleportMenuOpen;
     protected ref array<ref DME_TeleportPlayerMarker> m_DME_TeleportMarkers;
+    protected ref array<ref DME_TeleportParticleEffect> m_DME_TeleportParticles;
 
     override void OnInit()
     {
@@ -258,10 +290,14 @@ modded class MissionGameplay
 		if (!m_DME_TeleportMarkers)
 			m_DME_TeleportMarkers = new array<ref DME_TeleportPlayerMarker>;
 
+        if (!m_DME_TeleportParticles)
+            m_DME_TeleportParticles = new array<ref DME_TeleportParticleEffect>;
+
 		m_DMETeleportMenuOpen = false;
 
         GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, this, SingeplayerExecutionType.Client);
 		GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_MARKER, this, SingeplayerExecutionType.Client);
+        GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_PARTICLE, this, SingeplayerExecutionType.Client);
     }
 
     override void OnUpdate(float timeslice)
@@ -272,10 +308,12 @@ modded class MissionGameplay
             m_DME_TeleportLoadingScreen.Update();
 
 		UpdateTeleportMarkers();
+		UpdateTeleportParticles();
     }
 
     override void OnMissionFinish()
     {
+		ClearTeleportParticles();
 		ClearTeleportMarkers();
         CloseDMETeleportMenu();
         DME_TeleportManager.DestroyInstance();
@@ -369,6 +407,21 @@ modded class MissionGameplay
         m_DME_TeleportMarkers.Insert(new DME_TeleportPlayerMarker(data.param1, data.param2, data.param3));
     }
 
+    void ShowTeleportParticle(CallType type, ParamsReadContext ctx, PlayerIdentity sender, Object target)
+    {
+        if (type != CallType.Client)
+            return;
+
+        Param2<vector, int> data = new Param2<vector, int>(vector.Zero, 0);
+        if (!ctx.Read(data))
+            return;
+
+        if (!m_DME_TeleportParticles)
+            m_DME_TeleportParticles = new array<ref DME_TeleportParticleEffect>;
+
+        m_DME_TeleportParticles.Insert(new DME_TeleportParticleEffect(data.param1, data.param2));
+    }
+
     protected void UpdateTeleportMarkers()
     {
         if (!m_DME_TeleportMarkers)
@@ -384,6 +437,21 @@ modded class MissionGameplay
         }
     }
 
+    protected void UpdateTeleportParticles()
+    {
+        if (!m_DME_TeleportParticles)
+            return;
+
+        for (int particleIndex = m_DME_TeleportParticles.Count() - 1; particleIndex >= 0; particleIndex--)
+        {
+            DME_TeleportParticleEffect particleEffect = m_DME_TeleportParticles[particleIndex];
+            if (particleEffect && particleEffect.Update())
+                continue;
+
+            m_DME_TeleportParticles.Remove(particleIndex);
+        }
+    }
+
     protected void ClearTeleportMarkers()
     {
         if (!m_DME_TeleportMarkers)
@@ -396,5 +464,19 @@ modded class MissionGameplay
         }
 
         m_DME_TeleportMarkers.Clear();
+    }
+
+    protected void ClearTeleportParticles()
+    {
+        if (!m_DME_TeleportParticles)
+            return;
+
+        foreach (DME_TeleportParticleEffect particleEffect : m_DME_TeleportParticles)
+        {
+            if (particleEffect)
+                particleEffect.Destroy();
+        }
+
+        m_DME_TeleportParticles.Clear();
     }
 }

@@ -1,0 +1,5 @@
+Particle {
+ AlbedoMap "data/teleport.edds" 
+ BlendMode Additive_AlphaModulate
+ Emissive 1 1 1 0
+}

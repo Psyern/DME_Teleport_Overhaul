@@ -124,6 +124,38 @@ Example:
 - `Picture` — Index of the GUI thumbnail texture
 - `Marker` — `1` enables a temporary player-name marker after a GUI teleport, `0` disables it
 
+### RepMode
+
+- `RepMode: 0` — the `Cost` value is treated as the minimum reputation a player must have to use the teleport; reputation is checked but not removed.
+- `RepMode: 1` — the `Cost` value is treated as a travel cost; the player must have enough reputation and that amount is deducted when the teleport is used successfully.
+
+Example for `RepMode: 0`:
+
+```json
+{
+    "Version": 3,
+    "RepMode": 0,
+    "Destinations": [
+        {
+            "TeleportName": "Green Mountain",
+            "TeleportPos": [3700.51, 0.0, 5981.27],
+            "Cost": 1200,
+            "CooldownSec": 17,
+            "Picture": 1,
+            "Marker": 1
+        },
+        {
+            "TeleportName": "Krasno Airfield",
+            "TeleportPos": [11880.40, 0.0, 12460.74],
+            "Cost": 1800,
+            "CooldownSec": 15,
+            "Picture": 2,
+            "Marker": 1
+        }
+    ]
+}
+```
+
 ### Marker Behavior
 
 - Markers are created only for teleports triggered through the F2 GUI menu
