@@ -1,4 +1,4 @@
-class TeleportHelper
+class DME_OverhaulTeleportHelper
 {
     // Функция для создания объекта для взаимодействия
     static void CreateTeleportInteractionObject(string objectType, vector objectCoordinates, vector objectOrientation)
@@ -35,7 +35,7 @@ class TeleportHelper
             return;
 
         player.SetPosition(teleportPosition);
-        SetTeleportCooldown(teleportName, cooldownTime);
+        DME_OverhaulSetTeleportCooldown(teleportName, cooldownTime);
     }
 
     static vector GetSafeTeleportPosition(vector teleportPosition, bool useSurfaceSafety)

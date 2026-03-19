@@ -65,6 +65,14 @@ class DME_TeleportMenu extends UIScriptedMenu
 		ClearRows();
 	}
 
+	private string TranslateText(string text)
+	{
+		if (text == string.Empty)
+			return text;
+
+		return Widget.TranslateString(text);
+	}
+
 	override Widget Init()
 	{
 		layoutRoot = GetGame().GetWorkspace().CreateWidgets(LAYOUT_PATH);
@@ -79,13 +87,13 @@ class DME_TeleportMenu extends UIScriptedMenu
 			m_HeaderCostText = TextWidget.Cast(layoutRoot.FindAnyWidget("HeaderCost"));
 
 			if (m_TitleText)
-				m_TitleText.SetText("DME Teleport");
+				m_TitleText.SetText(TranslateText("#STR_DME_TELEPORT_TITLE"));
 
 			if (m_StatusText)
-				m_StatusText.SetText("Loading...");
+				m_StatusText.SetText(TranslateText("#STR_DME_TELEPORT_LOADING"));
 
 			if (m_ReputationText)
-				m_ReputationText.SetText("Reputation: ---");
+				m_ReputationText.SetText(string.Format(TranslateText("#STR_DME_TELEPORT_REPUTATION_FORMAT"), TranslateText("#STR_DME_TELEPORT_REPUTATION"), "---"));
 		}
 
 		return layoutRoot;
@@ -100,7 +108,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 		GetRPCManager().SendRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_REQUEST, null, true);
 
 		if (m_StatusText)
-			m_StatusText.SetText("Requesting data...");
+			m_StatusText.SetText(TranslateText("#STR_DME_TELEPORT_REQUESTING_DATA"));
 	}
 
 	override void OnHide()
@@ -167,21 +175,21 @@ class DME_TeleportMenu extends UIScriptedMenu
 		string serialized = data.param3;
 
 		if (m_ReputationText)
-			m_ReputationText.SetText("Reputation: " + m_PlayerReputation.ToString());
+			m_ReputationText.SetText(string.Format(TranslateText("#STR_DME_TELEPORT_REPUTATION_FORMAT"), TranslateText("#STR_DME_TELEPORT_REPUTATION"), m_PlayerReputation.ToString()));
 
 		if (m_HeaderCostText)
 		{
 			if (m_RepMode == 0)
-				m_HeaderCostText.SetText("Min Rep");
+				m_HeaderCostText.SetText(TranslateText("#STR_DME_TELEPORT_MIN_REP"));
 			else
-				m_HeaderCostText.SetText("Cost");
+				m_HeaderCostText.SetText(TranslateText("#STR_DME_TELEPORT_COST"));
 		}
 
 		ClearRows();
 		if (serialized == "")
 		{
 			if (m_StatusText)
-				m_StatusText.SetText("No destinations configured.");
+				m_StatusText.SetText(TranslateText("#STR_DME_TELEPORT_NO_DEST_CONFIGURED"));
 			return;
 		}
 
@@ -214,7 +222,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 			if (m_Rows.Count() > 0)
 				m_StatusText.SetText("");
 			else
-				m_StatusText.SetText("No destinations available.");
+				m_StatusText.SetText(TranslateText("#STR_DME_TELEPORT_NO_DEST_AVAILABLE"));
 		}
 
 		UpdateCooldownDisplays();
@@ -235,10 +243,10 @@ class DME_TeleportMenu extends UIScriptedMenu
 		string destName = data.param4;
 
 		if (m_ReputationText)
-			m_ReputationText.SetText("Reputation: " + m_PlayerReputation.ToString());
+			m_ReputationText.SetText(string.Format(TranslateText("#STR_DME_TELEPORT_REPUTATION_FORMAT"), TranslateText("#STR_DME_TELEPORT_REPUTATION"), m_PlayerReputation.ToString()));
 
 		if (m_StatusText)
-			m_StatusText.SetText(message);
+			m_StatusText.SetText(TranslateText(message));
 
 		if (success)
 		{
@@ -255,7 +263,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 			}
 
 			UpdateCooldownDisplays();
-			GetGame().GetCallQueue(CALL_CATEGORY_GUI).CallLater(Close, 1500, false);
+			Close();
 		}
 		else
 		{
@@ -313,7 +321,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 			{
 				if (row.CooldownText)
 				{
-					row.CooldownText.SetText("Ready");
+					row.CooldownText.SetText(TranslateText("#STR_DME_TELEPORT_READY"));
 					row.CooldownText.SetColor(ARGB(255, 128, 255, 128));
 				}
 
@@ -326,9 +334,9 @@ class DME_TeleportMenu extends UIScriptedMenu
 				int seconds = remaining % 60;
 				string timeStr;
 				if (minutes > 0)
-					timeStr = minutes.ToString() + "m " + seconds.ToString() + "s";
+					timeStr = minutes.ToString() + Widget.TranslateString("#STR_time_unit_abbrev_minute_0") + " " + seconds.ToString() + Widget.TranslateString("#STR_time_unit_abbrev_second_0");
 				else
-					timeStr = seconds.ToString() + "s";
+					timeStr = seconds.ToString() + Widget.TranslateString("#STR_time_unit_abbrev_second_0");
 
 				if (row.CooldownText)
 				{
@@ -345,7 +353,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 	private void RequestTravel(string destinationName)
 	{
 		if (m_StatusText)
-			m_StatusText.SetText("Traveling to " + destinationName + "...");
+			m_StatusText.SetText(string.Format(TranslateText("#STR_DME_TELEPORT_TRAVELING_TO"), destinationName));
 
 		GetRPCManager().SendRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.TRAVEL_REQUEST, new Param1<string>(destinationName), true);
 	}

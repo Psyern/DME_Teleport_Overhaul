@@ -1,15 +1,15 @@
 // Хранение времени последней активации каждого телепорта
-static ref map<string, float> g_teleportCooldowns = new map<string, float>();
+static ref map<string, float> g_DMEOverhaulTeleportCooldowns = new map<string, float>();
 
-static bool IsTeleportOnCooldown(string teleportName, int cooldownTime) {
+static bool DME_OverhaulIsTeleportOnCooldown(string teleportName, int cooldownTime) {
     // Если кулдаун 0, всегда разрешаем телепортацию
     if (cooldownTime == 0) {
         return false;
     }
 
     float currentTime = GetGame().GetTime() / 1000; // Текущее время в секундах
-    if (g_teleportCooldowns.Contains(teleportName)) {
-        float lastUsed = g_teleportCooldowns.Get(teleportName);
+    if (g_DMEOverhaulTeleportCooldowns.Contains(teleportName)) {
+        float lastUsed = g_DMEOverhaulTeleportCooldowns.Get(teleportName);
         if ((currentTime - lastUsed) < cooldownTime) {
             return true;
         }
@@ -17,22 +17,22 @@ static bool IsTeleportOnCooldown(string teleportName, int cooldownTime) {
     return false;
 }
 
-static void SetTeleportCooldown(string teleportName, int cooldownTime) {
+static void DME_OverhaulSetTeleportCooldown(string teleportName, int cooldownTime) {
     if (cooldownTime > 0) { // Устанавливаем кулдаун только если он больше 0
         float currentTime = GetGame().GetTime() / 1000; // Текущее время в секундах
-        g_teleportCooldowns.Set(teleportName, currentTime);
+        g_DMEOverhaulTeleportCooldowns.Set(teleportName, currentTime);
     }
 }
 
-autoptr ref TStringArray g_activatedActionTeleports = {};
-static ref TStringArray GetActivatedActionTeleports()
+autoptr ref TStringArray g_DMEOverhaulActivatedActionTeleports = {};
+static ref TStringArray DME_OverhaulGetActivatedActionTeleports()
 {
-	if (!g_activatedActionTeleports) g_activatedActionTeleports = {};
-	return g_activatedActionTeleports;
+	if (!g_DMEOverhaulActivatedActionTeleports) g_DMEOverhaulActivatedActionTeleports = {};
+	return g_DMEOverhaulActivatedActionTeleports;
 }
 
-static int SearchActivatedActionTeleport(string teleportName) {
-    foreach (auto key, auto name: g_activatedActionTeleports)
+static int DME_OverhaulSearchActivatedActionTeleport(string teleportName) {
+	foreach (auto key, auto name: g_DMEOverhaulActivatedActionTeleports)
     {
         if (name == teleportName) {
             return key;
@@ -41,16 +41,16 @@ static int SearchActivatedActionTeleport(string teleportName) {
     return -1;
 }
 
-static void InsertActivatedActionTeleport(string teleportName) {
-    if (SearchActivatedActionTeleport(teleportName) < 0) {
-        g_activatedActionTeleports.Insert(teleportName);
+static void DME_OverhaulInsertActivatedActionTeleport(string teleportName) {
+	if (DME_OverhaulSearchActivatedActionTeleport(teleportName) < 0) {
+		g_DMEOverhaulActivatedActionTeleports.Insert(teleportName);
     }
 }
 
-static void RemoveActivatedActionTeleport(string teleportName) {
-    int index = SearchActivatedActionTeleport(teleportName);
+static void DME_OverhaulRemoveActivatedActionTeleport(string teleportName) {
+	int index = DME_OverhaulSearchActivatedActionTeleport(teleportName);
     if (index >= 0) {
-        g_activatedActionTeleports.Remove(index);
+		g_DMEOverhaulActivatedActionTeleports.Remove(index);
     }
 }
 
@@ -63,7 +63,7 @@ class DME_Teleport_OverhaulActionCB : ActionContinuousBaseCB
 };
 class DME_Teleport_OverhaulAction: ActionContinuousBase
 {
-    protected ref LO_TeleportConfig m_TeleportConfig;  // Ссылка на объект конфигурации телепорта
+    protected ref DME_OverhaulTeleportConfig m_TeleportConfig;  // Ссылка на объект конфигурации телепорта
 
     void DME_Teleport_OverhaulAction()
     {
@@ -77,7 +77,7 @@ class DME_Teleport_OverhaulAction: ActionContinuousBase
 
     protected void LoadTeleportConfig()
     {
-        m_TeleportConfig = JsonConfigManager.LoadTeleportConfig();  // Загружаем конфигурацию с помощью JsonConfigManager
+        m_TeleportConfig = DME_OverhaulJsonConfigManager.LoadTeleportConfig();  // Загружаем конфигурацию с помощью JsonConfigManager
     }
 
     override void CreateConditionComponents()
@@ -103,19 +103,19 @@ class DME_Teleport_OverhaulAction: ActionContinuousBase
         PlayerBase player = action_data.m_Player;
         ActionTarget target = action_data.m_Target;
         Object targetObject = target.GetObject();
-        LO_TeleportEntry entry = GetTeleportEntry(targetObject);
+        DME_OverhaulTeleportEntry entry = GetTeleportEntry(targetObject);
 
         // Логика телепортации
         if (entry) {
             bool canTeleport = false;
-            if (IsTeleportOnCooldown(entry.TeleportName, entry.TeleportCooldownSeconds)) {
+            if (DME_OverhaulIsTeleportOnCooldown(entry.TeleportName, entry.TeleportCooldownSeconds)) {
                 player.MessageStatus("Этот телепорт на кулдауне, попробуйте позже!");
                 return;
             }            
             if (entry.EnableTeleport) {
                 if ("DME_Teleport_OverhaulPoint" == targetObject.GetType() && vector.Distance(targetObject.GetPosition(), player.GetPosition()) <= entry.CheckRadius)
                 {
-                    if (SearchActivatedActionTeleport(entry.TeleportName) < 0) {
+                    if (DME_OverhaulSearchActivatedActionTeleport(entry.TeleportName) < 0) {
                         if (entry.RequiredItem != "") {
                             ItemBase heldItem = player.GetItemInHands();
                             if (heldItem && heldItem.GetType() == entry.RequiredItem)
@@ -145,8 +145,8 @@ class DME_Teleport_OverhaulAction: ActionContinuousBase
 
                                     // Если время активации телепорта больше 0, мы продолжаем
                                     if (entry.TeleportActiveTimeSeconds > 0) {
-                                        InsertActivatedActionTeleport(entry.TeleportName);
-                                        GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(RemoveActivatedActionTeleport, entry.TeleportActiveTimeSeconds * 1000, false, entry.TeleportName);    
+                                        DME_OverhaulInsertActivatedActionTeleport(entry.TeleportName);
+                                        GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_OverhaulRemoveActivatedActionTeleport, entry.TeleportActiveTimeSeconds * 1000, false, entry.TeleportName);    
                                     }
                                 } else {
                                     Print("Item is already ruined, no further damage required.");
@@ -208,7 +208,7 @@ class DME_Teleport_OverhaulAction: ActionContinuousBase
                         GetRPCManager().SendRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, new Param2<int, string>(DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, preloadObjectTypes), true, player.GetIdentity());
                     }
 
-                    GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(TeleportHelper.TeleportPlayerWithSafety, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, player, randomTeleportPosition, entry.TeleportName, entry.TeleportCooldownSeconds, entry.UseSurfaceSafety);
+                    GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_OverhaulTeleportHelper.TeleportPlayerWithSafety, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, player, randomTeleportPosition, entry.TeleportName, entry.TeleportCooldownSeconds, entry.UseSurfaceSafety);
                 } else {
                     // Уведомление о нехватке предмета
                     player.MessageStatus(entry.MissingItemMessage);
@@ -217,8 +217,8 @@ class DME_Teleport_OverhaulAction: ActionContinuousBase
         }
     }
 
-    LO_TeleportEntry GetTeleportEntry(Object targetObject) {
-        foreach (ref LO_TeleportEntry entry : m_TeleportConfig.TeleportEntries)
+    DME_OverhaulTeleportEntry GetTeleportEntry(Object targetObject) {
+        foreach (ref DME_OverhaulTeleportEntry entry : m_TeleportConfig.TeleportEntries)
         {
             if (vector.Distance(targetObject.GetPosition(), entry.ObjectCoordinates) < 3) {
                 return entry;

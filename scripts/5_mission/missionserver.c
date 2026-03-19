@@ -2,7 +2,7 @@ modded class MissionServer
 {
     void MissionServer()
     {
-        JsonConfigManager.SpawnTeleportPoints();
+        DME_OverhaulJsonConfigManager.SpawnTeleportPoints();
     }
 
     override void OnInit()

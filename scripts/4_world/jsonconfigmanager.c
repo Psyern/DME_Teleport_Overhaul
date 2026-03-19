@@ -1,9 +1,21 @@
-class JsonConfigManager
+class DME_OverhaulJsonConfigManager
 {
-    static ref LO_TeleportPreloadConfig LoadTeleportPreloadConfig()
+	static const int CURRENT_PRELOAD_CONFIG_VERSION = 1;
+
+    static ref array<string> GetDefaultTeleportPreloadObjectTypes()
+    {
+        return {
+            "StaticObj_Underground_Corridor_Main_Gate_R",
+            "Land_Underground_Corridor_Main_Right",
+            "Land_Underground_Storage_Big",
+            "StaticObj_Underground_Corridor_Main_Gate_L"
+        };
+    }
+
+    static ref DME_OverhaulTeleportPreloadConfig LoadTeleportPreloadConfig()
     {
         string error;
-        ref LO_TeleportPreloadConfig config = new LO_TeleportPreloadConfig();
+        ref DME_OverhaulTeleportPreloadConfig config = new DME_OverhaulTeleportPreloadConfig();
 
         string configFilePath = DME_Teleport_Overhaul.PRELOAD_CONFIG_FILE;
         if (FileExist(configFilePath))
@@ -35,14 +47,18 @@ class JsonConfigManager
             return LoadTeleportPreloadConfig();
         }
 
+        bool changed = EnsurePreloadDefaults(config);
+        if (changed)
+            SavePreloadConfig(config);
+
         return config;
     }
 
     // Метод для загрузки конфига
-    static ref LO_TeleportConfig LoadTeleportConfig()
+    static ref DME_OverhaulTeleportConfig LoadTeleportConfig()
     {
         string error;
-        ref LO_TeleportConfig config = new LO_TeleportConfig();
+        ref DME_OverhaulTeleportConfig config = new DME_OverhaulTeleportConfig();
 
         string configFilePath = DME_Teleport_Overhaul.CONFIG_FILE;  // Путь к конфигу
         if (FileExist(configFilePath))
@@ -82,39 +98,133 @@ class JsonConfigManager
         return config;
     }
 
-    static void ApplyPreloadConfig(LO_TeleportConfig teleportConfig, LO_TeleportPreloadConfig preloadConfig)
+    static void ApplyPreloadConfig(DME_OverhaulTeleportConfig teleportConfig, DME_OverhaulTeleportPreloadConfig preloadConfig)
     {
         if (!teleportConfig || !preloadConfig)
             return;
 
-        foreach (ref LO_TeleportEntry teleportEntry : teleportConfig.TeleportEntries)
+        foreach (ref DME_OverhaulTeleportEntry teleportEntry : teleportConfig.TeleportEntries)
         {
             if (!teleportEntry)
                 continue;
 
-            foreach (ref LO_TeleportPreloadEntry preloadEntry : preloadConfig.TeleportPreloads)
+            teleportEntry.PreloadObjectTypes = new array<string>();
+            InsertUniqueObjectTypes(teleportEntry.PreloadObjectTypes, preloadConfig.GlobalPreloadObjectTypes);
+
+            foreach (ref DME_OverhaulTeleportPreloadEntry preloadEntry : preloadConfig.TeleportPreloads)
             {
                 if (!preloadEntry || preloadEntry.TeleportName != teleportEntry.TeleportName)
                     continue;
 
-                teleportEntry.PreloadObjectTypes = new array<string>();
-                foreach (string objectType : preloadEntry.PreloadObjectTypes)
-                {
-                    teleportEntry.PreloadObjectTypes.Insert(objectType);
-                }
+                InsertUniqueObjectTypes(teleportEntry.PreloadObjectTypes, preloadEntry.PreloadObjectTypes);
 
                 break;
             }
         }
     }
 
+    static void InsertUniqueObjectTypes(array<string> target, array<string> source)
+    {
+        if (!target || !source)
+            return;
+
+        foreach (string objectType : source)
+        {
+            if (objectType == string.Empty)
+                continue;
+
+            if (target.Find(objectType) > -1)
+                continue;
+
+            target.Insert(objectType);
+        }
+    }
+
+    static bool EnsurePreloadDefaults(DME_OverhaulTeleportPreloadConfig config)
+    {
+        bool changed;
+
+        if (!config)
+            return false;
+
+		if (config.VersionID != CURRENT_PRELOAD_CONFIG_VERSION)
+		{
+			config.VersionID = CURRENT_PRELOAD_CONFIG_VERSION;
+			changed = true;
+		}
+
+        if (!config.GlobalPreloadObjectTypes)
+        {
+            config.GlobalPreloadObjectTypes = new array<string>();
+            changed = true;
+        }
+
+        if (!config.TeleportPreloads)
+        {
+            config.TeleportPreloads = new array<ref DME_OverhaulTeleportPreloadEntry>();
+            changed = true;
+        }
+
+        ref array<string> defaultObjectTypes = GetDefaultTeleportPreloadObjectTypes();
+        if (config.GlobalPreloadObjectTypes.Count() == 0)
+        {
+            InsertUniqueObjectTypes(config.GlobalPreloadObjectTypes, defaultObjectTypes);
+            changed = true;
+        }
+
+        DME_OverhaulTeleportPreloadEntry teleportOneEntry = FindOrCreatePreloadEntry(config, "Teleport 1");
+        if (teleportOneEntry && teleportOneEntry.PreloadObjectTypes.Count() == 0)
+        {
+            InsertUniqueObjectTypes(teleportOneEntry.PreloadObjectTypes, defaultObjectTypes);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    static DME_OverhaulTeleportPreloadEntry FindOrCreatePreloadEntry(DME_OverhaulTeleportPreloadConfig config, string teleportName)
+    {
+        if (!config || !config.TeleportPreloads)
+            return null;
+
+        foreach (DME_OverhaulTeleportPreloadEntry preloadEntry : config.TeleportPreloads)
+        {
+            if (preloadEntry && preloadEntry.TeleportName == teleportName)
+                return preloadEntry;
+        }
+
+        DME_OverhaulTeleportPreloadEntry newEntry = new DME_OverhaulTeleportPreloadEntry();
+        newEntry.TeleportName = teleportName;
+        config.TeleportPreloads.Insert(newEntry);
+        return newEntry;
+    }
+
+    static void SavePreloadConfig(DME_OverhaulTeleportPreloadConfig config)
+    {
+        if (!config)
+            return;
+
+        string jsonContent;
+        JsonSerializer json = new JsonSerializer();
+        json.WriteToString(config, true, jsonContent);
+
+        DME_Teleport_Overhaul.EnsureDirectories();
+
+        FileHandle file = OpenFile(DME_Teleport_Overhaul.PRELOAD_CONFIG_FILE, FileMode.WRITE);
+        if (file != -1)
+        {
+            FPrint(file, jsonContent);
+            CloseFile(file);
+        }
+    }
+
     // Метод для создания дефолтного конфига
     static void CreateDefaultConfig()
     {
-        ref LO_TeleportConfig defaultConfig = new LO_TeleportConfig();
+        ref DME_OverhaulTeleportConfig defaultConfig = new DME_OverhaulTeleportConfig();
 
         // Пример дефолтных данных для телепорта
-        LO_TeleportEntry entry1 = new LO_TeleportEntry();
+        DME_OverhaulTeleportEntry entry1 = new DME_OverhaulTeleportEntry();
         entry1.EnableTeleport = true;
         entry1.TeleportName = "Teleport 1";
         entry1.ObjectType = "Land_Door_germa_1";
@@ -129,7 +239,7 @@ class JsonConfigManager
         entry1.UseSurfaceSafety = true;
         defaultConfig.TeleportEntries.Insert(entry1);
 
-        LO_TeleportEntry entry2 = new LO_TeleportEntry();
+        DME_OverhaulTeleportEntry entry2 = new DME_OverhaulTeleportEntry();
         entry2.EnableTeleport = false;
         entry2.TeleportName = "Teleport 2";
         entry2.ObjectType = "Land_House_1W01";
@@ -167,13 +277,16 @@ class JsonConfigManager
 
     static void CreateDefaultPreloadConfig()
     {
-        ref LO_TeleportPreloadConfig defaultConfig = new LO_TeleportPreloadConfig();
+        ref DME_OverhaulTeleportPreloadConfig defaultConfig = new DME_OverhaulTeleportPreloadConfig();
+		defaultConfig.VersionID = CURRENT_PRELOAD_CONFIG_VERSION;
+        InsertUniqueObjectTypes(defaultConfig.GlobalPreloadObjectTypes, GetDefaultTeleportPreloadObjectTypes());
 
-        LO_TeleportPreloadEntry preloadEntry1 = new LO_TeleportPreloadEntry();
+        DME_OverhaulTeleportPreloadEntry preloadEntry1 = new DME_OverhaulTeleportPreloadEntry();
         preloadEntry1.TeleportName = "Teleport 1";
+        InsertUniqueObjectTypes(preloadEntry1.PreloadObjectTypes, GetDefaultTeleportPreloadObjectTypes());
         defaultConfig.TeleportPreloads.Insert(preloadEntry1);
 
-        LO_TeleportPreloadEntry preloadEntry2 = new LO_TeleportPreloadEntry();
+        DME_OverhaulTeleportPreloadEntry preloadEntry2 = new DME_OverhaulTeleportPreloadEntry();
         preloadEntry2.TeleportName = "Teleport 2";
         defaultConfig.TeleportPreloads.Insert(preloadEntry2);
 
@@ -196,14 +309,23 @@ class JsonConfigManager
         }
     }
 
+    static string GetSerializedGlobalPreloadObjectTypes()
+    {
+        DME_OverhaulTeleportPreloadConfig preloadConfig = LoadTeleportPreloadConfig();
+        if (!preloadConfig)
+            return string.Empty;
+
+        return DME_Teleport_Overhaul.SerializePreloadObjectTypes(preloadConfig.GlobalPreloadObjectTypes);
+    }
+
     static void SpawnTeleportPoints() {
-        LO_TeleportConfig m_TeleportConfig = LoadTeleportConfig();
-        foreach (ref LO_TeleportEntry entry : m_TeleportConfig.TeleportEntries)
+        DME_OverhaulTeleportConfig m_TeleportConfig = LoadTeleportConfig();
+        foreach (ref DME_OverhaulTeleportEntry entry : m_TeleportConfig.TeleportEntries)
         {
             if (entry.EnableTeleport)
             {
                 // Спавним объект для взаимодействия
-                TeleportHelper.CreateTeleportInteractionObject(entry.ObjectType, entry.ObjectCoordinates, entry.ObjectOrientation);
+                DME_OverhaulTeleportHelper.CreateTeleportInteractionObject(entry.ObjectType, entry.ObjectCoordinates, entry.ObjectOrientation);
             }
         }
     }

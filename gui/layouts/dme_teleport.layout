@@ -1,7 +1,8 @@
 FrameWidgetClass RootFrame {
  visible 1
- position 0.25 0.05
- size 0.5 0.79977
+ size 0.75 0.7998
+ halign center_ref
+ valign center_ref
  hexactpos 0
  vexactpos 0
  hexactsize 0
@@ -27,7 +28,7 @@ FrameWidgetClass RootFrame {
    vexactpos 1
    hexactsize 0
    vexactsize 1
-   text "Psyerns Teleport"
+    text "#STR_DME_TELEPORT_TITLE"
    font "gui/fonts/etelkatextpro22"
    "exact text" 1
    "exact text size" 30
@@ -43,7 +44,7 @@ FrameWidgetClass RootFrame {
    vexactpos 1
    hexactsize 0
    vexactsize 1
-   text "Reputation: ---"
+    text "#STR_DME_TELEPORT_REPUTATION"
    font "gui/fonts/etelkatextpro"
    "exact text" 1
    "exact text size" 30
@@ -84,7 +85,7 @@ FrameWidgetClass RootFrame {
      vexactpos 0
      hexactsize 0
      vexactsize 0
-     text "Destination"
+    text "#STR_DME_TELEPORT_DESTINATION"
      font "gui/fonts/etelkatextpro"
      "exact text" 1
      "exact text size" 30
@@ -100,7 +101,7 @@ FrameWidgetClass RootFrame {
      vexactpos 0
      hexactsize 0
      vexactsize 0
-     text "Reputation"
+    text "#STR_DME_TELEPORT_COST"
      font "gui/fonts/etelkatextpro"
      "exact text" 1
      "exact text size" 30
@@ -116,7 +117,7 @@ FrameWidgetClass RootFrame {
      vexactpos 0
      hexactsize 0
      vexactsize 0
-     text "Cooldown"
+    text "#STR_DME_TELEPORT_COOLDOWN"
      font "gui/fonts/etelkatextpro"
      "exact text" 1
      "exact text size" 30
@@ -132,7 +133,7 @@ FrameWidgetClass RootFrame {
      vexactpos 0
      hexactsize 0
      vexactsize 0
-     text "Action"
+    text "#STR_DME_TELEPORT_ACTION"
      font "gui/fonts/etelkatextpro"
      "exact text" 1
      "exact text size" 30
@@ -174,7 +175,7 @@ FrameWidgetClass RootFrame {
    vexactpos 0
    hexactsize 0
    vexactsize 1
-   text "Close"
+    text "#STR_DME_TELEPORT_CLOSE"
    font "gui/fonts/etelkatextpro"
   }
  }

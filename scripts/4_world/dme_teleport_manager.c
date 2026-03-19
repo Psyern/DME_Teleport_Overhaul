@@ -3,6 +3,7 @@ class DME_TeleportManager
 	private static ref DME_TeleportManager s_Instance;
 	private ref DME_TeleportConfig m_Config;
 	private ref DME_ProhibitedZonesConfig m_ProhibitedZonesConfig;
+	private string m_GlobalMenuPreloadObjectTypes;
 	private ref map<string, ref map<string, int>> m_Cooldowns;
 	private ref map<string, int> m_LastRequestTime;
 
@@ -18,6 +19,7 @@ class DME_TeleportManager
 		{
 			m_Config = DME_TeleportConfigLoader.Load();
 			m_ProhibitedZonesConfig = DME_ProhibitedZonesConfigLoader.Load();
+			m_GlobalMenuPreloadObjectTypes = DME_OverhaulJsonConfigManager.GetSerializedGlobalPreloadObjectTypes();
 		}
 
 		Print("[DME_Teleport_Menu] Manager initialized (server=" + GetGame().IsServer().ToString() + ").");
@@ -118,13 +120,16 @@ class DME_TeleportManager
 		if (pos[1] == 0)
 			pos[1] = GetGame().SurfaceY(pos[0], pos[2]);
 
-		vector safePos = TeleportHelper.GetSafeTeleportPosition(pos, true);
-		player.SetPosition(safePos);
-		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(TeleportHelper.EnsurePlayerAboveGround, DME_Teleport_Overhaul.TELEPORT_POSITION_RECHECK_DELAY_MS, false, player, safePos);
+		vector safePos = DME_OverhaulTeleportHelper.GetSafeTeleportPosition(pos, true);
+
+		if (sender)
+			GetRPCManager().SendRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, new Param2<int, string>(DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, m_GlobalMenuPreloadObjectTypes), true, sender);
+
+		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(DME_OverhaulTeleportHelper.TeleportPlayerWithSafety, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, player, safePos, dest.TeleportName, 0, true);
 
 		int updatedRep = GetPlayerReputation(player);
-		Print("[DME_Teleport_Menu] Teleported " + sender.GetName() + " (" + uid + ") to " + destName + " at " + safePos.ToString());
-		SendTravelResult(sender, true, "Teleported to " + destName + "!", updatedRep, destName, newNextAvailable);
+		Print("[DME_Teleport_Menu] Scheduled teleport for " + sender.GetName() + " (" + uid + ") to " + destName + " at " + safePos.ToString());
+		SendTravelResult(sender, true, "Teleporting to " + destName + "...", updatedRep, destName, newNextAvailable);
 	}
 
 	void RPC_SyncRequest(CallType type, ParamsReadContext ctx, PlayerIdentity sender, Object target)
@@ -302,9 +307,9 @@ class DME_TeleportManager
 			return zone.WarningMessage;
 
 		if (isDestination)
-			return "Selected destination is inside a prohibited teleport zone.";
+			return "#STR_DME_TELEPORT_WARNING_DESTINATION";
 
-		return "Teleporting is not allowed in this zone.";
+		return "#STR_DME_TELEPORT_WARNING_ZONE";
 	}
 
 	private DME_TeleportDestination FindDestination(string name)

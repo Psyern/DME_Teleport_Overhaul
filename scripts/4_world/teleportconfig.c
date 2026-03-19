@@ -1,38 +1,42 @@
 // Файл: scripts/4_World/teleportconfig.c
 
-class LO_TeleportConfig
+class DME_OverhaulTeleportConfig
 {
-    ref array<ref LO_TeleportEntry> TeleportEntries;
+    ref array<ref DME_OverhaulTeleportEntry> TeleportEntries;
 
-    void LO_TeleportConfig()
+    void DME_OverhaulTeleportConfig()
     {
-        TeleportEntries = new array<ref LO_TeleportEntry>();
+        TeleportEntries = new array<ref DME_OverhaulTeleportEntry>();
     }
 }
 
-class LO_TeleportPreloadConfig
+class DME_OverhaulTeleportPreloadConfig
 {
-    ref array<ref LO_TeleportPreloadEntry> TeleportPreloads;
+    int VersionID;
+    ref array<string> GlobalPreloadObjectTypes;
+    ref array<ref DME_OverhaulTeleportPreloadEntry> TeleportPreloads;
 
-    void LO_TeleportPreloadConfig()
+    void DME_OverhaulTeleportPreloadConfig()
     {
-        TeleportPreloads = new array<ref LO_TeleportPreloadEntry>();
+        VersionID = 0;
+        GlobalPreloadObjectTypes = new array<string>();
+        TeleportPreloads = new array<ref DME_OverhaulTeleportPreloadEntry>();
     }
 }
 
-class LO_TeleportPreloadEntry
+class DME_OverhaulTeleportPreloadEntry
 {
     string TeleportName;
     ref array<string> PreloadObjectTypes;
 
-    void LO_TeleportPreloadEntry()
+    void DME_OverhaulTeleportPreloadEntry()
     {
         TeleportName = "";
         PreloadObjectTypes = new array<string>();
     }
 }
 
-class LO_TeleportEntry
+class DME_OverhaulTeleportEntry
 {
     bool EnableTeleport;                    // Включен ли телепорт
     string TeleportName;                    // Имя телепорта, уникальное для каждого телепорта
@@ -49,7 +53,7 @@ class LO_TeleportEntry
     bool UseSurfaceSafety;                  // Корректировать позицию до поверхности, если точка телепорта ниже земли
     ref array<string> PreloadObjectTypes;   // Список объектов для клиентского PreloadObject перед телепортом
 
-    void LO_TeleportEntry()
+    void DME_OverhaulTeleportEntry()
     {
         EnableTeleport = true;
 		TeleportName = "";

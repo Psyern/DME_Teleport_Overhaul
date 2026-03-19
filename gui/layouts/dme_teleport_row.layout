@@ -39,7 +39,7 @@ PanelWidgetClass DestRowRoot {
    vexactpos 0
    hexactsize 0
    vexactsize 0
-   text "Destination"
+    text "#STR_DME_TELEPORT_DESTINATION"
    font "gui/fonts/etelkatextpro22"
    "exact text" 1
    "exact text size" 30
@@ -80,7 +80,7 @@ PanelWidgetClass DestRowRoot {
    hexactsize 0
    vexactsize 0
    scaled 1
-   text "Ready"
+    text "#STR_DME_TELEPORT_READY"
    font "gui/fonts/etelkatextpro"
    "exact text" 1
    "exact text size" 30
@@ -103,7 +103,7 @@ PanelWidgetClass DestRowRoot {
    vexactpos 1
    hexactsize 0
    vexactsize 1
-   text "Travel"
+    text "#STR_DME_TELEPORT_TRAVEL"
    font "gui/fonts/etelkatextpro"
   }
  }

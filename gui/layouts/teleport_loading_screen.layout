@@ -60,9 +60,10 @@ FrameWidgetClass DME_TeleportLoadingRoot {
      visible 1
      ignorepointer 1
      color 0 0 0 0.75
-     position 0.2 0.84
+     position 0 0.15
      size 0.6 24
      halign center_ref
+     valign bottom_ref
      hexactpos 0
      vexactpos 0
      hexactsize 0

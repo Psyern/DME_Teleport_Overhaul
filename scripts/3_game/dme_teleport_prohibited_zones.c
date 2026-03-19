@@ -10,7 +10,7 @@ class DME_ProhibitedTeleportZone
 	{
 		POI = new array<float>;
 		PolygonVectors = new array<ref array<float>>;
-		WarningMessage = "Teleporting is not allowed in this zone.";
+		WarningMessage = "#STR_DME_TELEPORT_WARNING_ZONE";
 	}
 
 	vector GetPOIPosition()
@@ -77,6 +77,9 @@ class DME_ProhibitedZonesConfigLoader
 				config = new DME_ProhibitedZonesConfig();
 
 			bool migrated = Migrate(config);
+			if (EnsureExampleZones(config))
+				migrated = true;
+
 			if (migrated)
 				Save(config);
 
@@ -105,7 +108,46 @@ class DME_ProhibitedZonesConfigLoader
 	{
 		ref DME_ProhibitedZonesConfig config = new DME_ProhibitedZonesConfig();
 		config.VersionID = CURRENT_VERSION_ID;
+		EnsureExampleZones(config);
 		return config;
+	}
+
+	protected static bool EnsureExampleZones(DME_ProhibitedZonesConfig config)
+	{
+		if (!config)
+			return false;
+
+		if (!config.ProhibitedTeleportZones)
+			config.ProhibitedTeleportZones = new array<ref DME_ProhibitedTeleportZone>;
+
+		if (config.ProhibitedTeleportZones.Count() > 0)
+			return false;
+
+		config.ProhibitedTeleportZones.Insert(CreateExampleRadiusZone());
+		config.ProhibitedTeleportZones.Insert(CreateExamplePolygonZone());
+		return true;
+	}
+
+	protected static ref DME_ProhibitedTeleportZone CreateExampleRadiusZone()
+	{
+		ref DME_ProhibitedTeleportZone zone = new DME_ProhibitedTeleportZone();
+		zone.POI = { 2731.57, 0.0, 1255.94 };
+		zone.Radius = 250;
+		zone.WarningMessage = "#STR_DME_TELEPORT_WARNING_RADIUS_EXAMPLE";
+		zone.PolygonZoneEnable = false;
+		return zone;
+	}
+
+	protected static ref DME_ProhibitedTeleportZone CreateExamplePolygonZone()
+	{
+		ref DME_ProhibitedTeleportZone zone = new DME_ProhibitedTeleportZone();
+		zone.WarningMessage = "#STR_DME_TELEPORT_WARNING_POLYGON_EXAMPLE";
+		zone.PolygonZoneEnable = true;
+		zone.PolygonVectors.Insert({ 3616.18, 0.0, 2041.39 });
+		zone.PolygonVectors.Insert({ 3662.84, 0.0, 2486.61 });
+		zone.PolygonVectors.Insert({ 4444.40, 0.0, 2331.07 });
+		zone.PolygonVectors.Insert({ 4331.63, 0.0, 2134.71 });
+		return zone;
 	}
 
 	protected static bool Migrate(DME_ProhibitedZonesConfig config)
@@ -148,7 +190,7 @@ class DME_ProhibitedZonesConfigLoader
 
 			if (zone.WarningMessage == string.Empty)
 			{
-				zone.WarningMessage = "Teleporting is not allowed in this zone.";
+				zone.WarningMessage = "#STR_DME_TELEPORT_WARNING_ZONE";
 				migrated = true;
 			}
 

@@ -4,23 +4,25 @@
 [![Enforce Script](https://img.shields.io/badge/Enforce-Script-orange)](https://community.bistudio.com/wiki/DayZ:Enforce_Script_Syntax)
 [![Maintainer](https://img.shields.io/badge/Maintainer-Psyern-green)](https://github.com/Psyern)
 
-> **Ein standalone Teleport-System für DayZ Standalone mit Loading-Screen, Progress-Bar, CF-RPCs und modularer JSON-Konfiguration.**
+> A standalone DayZ teleport system with world teleports, an F2 UI teleport menu, loading screens, CF RPCs, localized GUI strings, and modular profile-based JSON configuration.
 
 ## ✨ Features
 
-- Interaktive Teleport-Punkte über Weltobjekte
-- 12 Sekunden Loading-Screen mit zufälligem Hintergrund aus `.edds`-Dateien
-- Progress-Bar über Vollbild-Layout
-- Audio-Mute während des Loading-Screens mit sanftem Fade-Out
-- DayZ Community Framework RPC-Anbindung
-- Standalone Profilstruktur unter `profiles/DeadmansEcho/TeleportOverhaul`
-- Serverseitige Boden-Sicherheitskorrektur gegen Spawn unter der Map
-- Modulare Preload-Konfiguration pro Teleport über separate JSON-Datei
-- Teleport-Logging in eigene Log-Datei
+- World interaction teleports placed through configured objects
+- F2 teleport menu with destination cards, cooldowns, and reputation cost support
+- Full-screen loading screen with random `.edds` backgrounds and progress bar
+- Muted audio during loading with smooth fade-out and automatic HUD hide/show
+- Server-authoritative teleport execution with delayed client loading screen flow
+- Surface safety correction and post-teleport ground recheck
+- Modular preload configuration with global and per-teleport object preloads
+- Prohibited teleport zones with radius and polygon support
+- Auto-generated profile configs with example data and migration support
+- Localized GUI and warning messages through `stringtable.csv`
+- Teleport logging to a dedicated profile log file
 
-## 📁 Profilstruktur
+## 📁 Profile Structure
 
-Der Mod arbeitet mit folgender Profilstruktur:
+The mod uses the following standalone profile structure:
 
 ```text
 profiles/
@@ -28,15 +30,19 @@ profiles/
     └── TeleportOverhaul/
         ├── teleport_config.json
         ├── teleport_preload_config.json
+        ├── teleport_menu_config.json
+        ├── ProhibitedZones.json
         └── Logs/
             └── teleport.log
 ```
 
-## ⚙️ Hauptkonfiguration
+All of these files are created automatically on server start if they are missing. Existing files are also checked and updated when new config fields or versions are introduced.
 
-Datei: `profiles/DeadmansEcho/TeleportOverhaul/teleport_config.json`
+## ⚙️ World Teleport Config
 
-Beispiel:
+File: `profiles/DeadmansEcho/TeleportOverhaul/teleport_config.json`
+
+Example:
 
 ```json
 {
@@ -61,110 +67,233 @@ Beispiel:
 }
 ```
 
-### Felder
+### Fields
 
-- `EnableTeleport` — Aktiviert oder deaktiviert den Teleport
-- `TeleportName` — Eindeutiger Name des Teleports
-- `ObjectType` — Weltobjekt, an dem der Teleport hängt
-- `ObjectCoordinates` — Position des Interaktionsobjekts
-- `ObjectOrientation` — Rotation des sichtbaren Objekts
-- `TeleportPosition` — Zielposition des Teleports
-- `CheckRadius` — Distanzprüfung für Interaktion
-- `RequiredItem` — Benötigter Gegenstand in der Hand
-- `RequiredItemDamagePercent` — Schaden am benötigten Gegenstand
-- `TeleportActiveTimeSeconds` — Zeitfenster, in dem der Teleport nach Aktivierung offen bleibt
-- `TeleportCooldownSeconds` — Cooldown für erneute Nutzung
-- `MissingItemMessage` — Nachricht bei fehlendem Item
-- `UseSurfaceSafety` — Hebt Zielposition auf Bodenniveau an, falls nötig
-- `PreloadObjectTypes` — Fallback-Feld, falls Preload direkt in der Hauptdatei gepflegt werden soll
+- `EnableTeleport` — Enables or disables the teleport entry
+- `TeleportName` — Unique teleport identifier
+- `ObjectType` — World object type used for the visible teleport object
+- `ObjectCoordinates` — World position of the interaction object
+- `ObjectOrientation` — Rotation of the visible object
+- `TeleportPosition` — Teleport destination position
+- `CheckRadius` — Interaction distance check
+- `RequiredItem` — Item required in the player’s hands
+- `RequiredItemDamagePercent` — Damage applied to the required item on use
+- `TeleportActiveTimeSeconds` — Time window where the teleport remains active after first activation
+- `TeleportCooldownSeconds` — Cooldown for reuse
+- `MissingItemMessage` — Message shown when the required item is missing
+- `UseSurfaceSafety` — Lifts the destination to safe ground level when needed
+- `PreloadObjectTypes` — Optional per-entry preload fallback list
 
-## 🧩 Modulare Preload-Konfiguration
+## 🗺️ UI Teleport Menu Config
 
-Datei: `profiles/DeadmansEcho/TeleportOverhaul/teleport_preload_config.json`
+File: `profiles/DeadmansEcho/TeleportOverhaul/teleport_menu_config.json`
 
-Beispiel:
+Example:
 
 ```json
 {
+    "Version": 2,
+    "RepMode": 1,
+    "Destinations": [
+        {
+            "TeleportName": "Green Mountain",
+            "TeleportPos": [3700.51, 0.0, 5981.27],
+            "Cost": 1200,
+            "CooldownSec": 1700,
+            "Picture": 1
+        },
+        {
+            "TeleportName": "Krasno Airfield",
+            "TeleportPos": [11880.40, 0.0, 12460.74],
+            "Cost": 1800,
+            "CooldownSec": 1500,
+            "Picture": 2
+        }
+    ]
+}
+```
+
+### Fields
+
+- `Version` — Config version used for migration
+- `RepMode` — `0` = minimum reputation required, `1` = spend reputation on travel
+- `Destinations` — Menu destinations shown in the F2 teleport UI
+- `Picture` — Index of the GUI thumbnail texture
+
+### Picture ID Mapping
+
+Use the following `Picture` values in `teleport_menu_config.json`:
+
+- `0` — no image
+- `1` — `gui/assets/airport.edds`
+- `2` — `gui/assets/airport2.edds`
+- `3` — `gui/assets/baloon.edds`
+- `4` — `gui/assets/city.edds`
+- `5` — `gui/assets/fishing.edds`
+- `6` — `gui/assets/forest.edds`
+- `7` — `gui/assets/forest2.edds`
+- `8` — `gui/assets/galaxy.edds`
+- `9` — `gui/assets/landhouse.edds`
+- `10` — `gui/assets/landside.edds`
+- `11` — `gui/assets/mountains.edds`
+- `12` — `gui/assets/tisy.edds`
+
+### Suggested Usage
+
+- `1` / `2` — airfields, military routes, or travel hubs
+- `4` — towns, large settlements, or trader areas
+- `5` — fishing spots, coastal routes, or harbor travel
+- `6` / `7` / `11` — forests, remote camps, and mountain destinations
+- `9` / `10` — residential areas, compounds, or underground access points
+- `12` — high-tier military or endgame destinations
+- `3` / `8` — special event teleports, fantasy locations, or custom server landmarks
+
+## 🧩 Preload Config
+
+File: `profiles/DeadmansEcho/TeleportOverhaul/teleport_preload_config.json`
+
+Example:
+
+```json
+{
+    "VersionID": 1,
+    "GlobalPreloadObjectTypes": [
+        "StaticObj_Underground_Corridor_Main_Gate_R",
+        "Land_Underground_Corridor_Main_Right",
+        "Land_Underground_Storage_Big",
+        "StaticObj_Underground_Corridor_Main_Gate_L"
+    ],
     "TeleportPreloads": [
         {
             "TeleportName": "Teleport 1",
             "PreloadObjectTypes": [
-                "Land_Underground_Stairs_Exit",
-                "Land_Underground_Stairs_Block"
+                "StaticObj_Underground_Corridor_Main_Gate_R",
+                "Land_Underground_Corridor_Main_Right",
+                "Land_Underground_Storage_Big",
+                "StaticObj_Underground_Corridor_Main_Gate_L"
             ]
         }
     ]
 }
 ```
 
-### Zweck
+### Behavior
 
-Diese Datei hält `PreloadObjectTypes` getrennt von der eigentlichen Teleport-Logik. Das ist sinnvoll, wenn:
+- `GlobalPreloadObjectTypes` applies to all world teleports and to UI menu teleports
+- `TeleportPreloads` adds extra preload types by `TeleportName`
+- Duplicate object types are merged automatically
+- The file is auto-created, version-checked, and backfilled on server start
 
-- Teleport-Ziele oft wechseln
-- Preload-Daten separat gepflegt werden sollen
-- verschiedene Mapper oder Admins an unterschiedlichen Bereichen arbeiten
+## 🚫 Prohibited Teleport Zones
 
-Der Mod merged die Einträge über `TeleportName` automatisch in die aktiven Teleport-Konfigurationen.
+File: `profiles/DeadmansEcho/TeleportOverhaul/ProhibitedZones.json`
 
-## 🖼️ Loading-Screen
+Example:
 
-Der Loading-Screen verwendet die Hintergrundbilder aus:
+```json
+{
+    "VersionID": 1,
+    "ProhibitedTeleportZones": [
+        {
+            "POI": [2731.57, 0.0, 1255.94],
+            "Radius": 250.0,
+            "WarningMessage": "#STR_DME_TELEPORT_WARNING_RADIUS_EXAMPLE",
+            "PolygonZoneEnable": false,
+            "PolygonVectors": []
+        },
+        {
+            "POI": [],
+            "Radius": 0.0,
+            "WarningMessage": "#STR_DME_TELEPORT_WARNING_POLYGON_EXAMPLE",
+            "PolygonZoneEnable": true,
+            "PolygonVectors": [
+                [3616.18, 0.0, 2041.39],
+                [3662.84, 0.0, 2486.61],
+                [4444.4, 0.0, 2331.07],
+                [4331.63, 0.0, 2134.71]
+            ]
+        }
+    ]
+}
+```
+
+### Notes
+
+- Radius zones use `POI` + `Radius`
+- Polygon zones use `PolygonZoneEnable = true` and at least 3 `PolygonVectors`
+- These checks are enforced server-side for UI/F2 teleports
+- `WarningMessage` supports direct text or `#STR_...` stringtable keys
+- Example zones are inserted automatically when the file is missing or empty
+
+## 🖼️ Loading Screen
+
+The loading screen uses the following backgrounds:
 
 - `data/dme1.edds`
 - `data/dme2.edds`
 - `data/dme3.edds`
 
-Verhalten:
+Behavior:
 
-- Anzeige bei Teleport-Start
-- Dauer: 12 Sekunden
-- Ton auf 0 während des Screens
-- weiches Fade-Out am Ende
-- HUD wird währenddessen ausgeblendet
+- Duration: 12 seconds
+- Full-screen layout with progress bar
+- Sound volume set to `0` during loading
+- Smooth fade-out before the end
+- HUD hidden while the loading screen is active
+- Used by both world teleports and UI menu teleports
 
-## 🛡️ Teleport-Sicherheit
+## 🌐 Localization
 
-Um Probleme mit nicht vollständig geladenem Terrain oder Innenräumen zu reduzieren, nutzt der Mod aktuell zwei Schutzmechanismen:
+File: `stringtable.csv`
 
-- `UseSurfaceSafety` hebt die Zielposition serverseitig auf sichere Bodenhöhe an
-- eine Nachprüfung korrigiert die Spielerposition kurz nach dem Teleport erneut
+The mod now ships with localized GUI and warning keys, including:
 
-Zusätzlich können über `teleport_preload_config.json` gezielt Objektklassen vorgeladen werden.
+- Menu title and buttons
+- Status messages
+- Reputation and cooldown labels
+- Prohibited zone warning messages
 
-## 🔌 Abhängigkeiten
+Custom warning messages in JSON can also use stringtable keys such as:
 
-Benötigt:
+- `#STR_DME_TELEPORT_WARNING_ZONE`
+- `#STR_DME_TELEPORT_WARNING_DESTINATION`
+- `#STR_DME_TELEPORT_WARNING_RADIUS_EXAMPLE`
+- `#STR_DME_TELEPORT_WARNING_POLYGON_EXAMPLE`
+
+## 🛡️ Teleport Safety
+
+To reduce issues with incomplete terrain or underground/interior destinations, the mod uses multiple safety layers:
+
+- Optional `UseSurfaceSafety` correction on server-side teleport position
+- Post-teleport height recheck after a short delay
+- Object preloading before teleport begins
+- Delayed server teleport after the client loading screen finishes
+
+## 🔌 Dependencies
+
+Required:
 
 - DayZ Standalone
 - DayZ Community Framework (`JM_CF_Scripts`)
+- DayZ Expansion Hardline Scripts (`DayZExpansion_Hardline_Scripts`)
 
-## 🧠 Technische Hinweise
+## 🧠 Technical Notes
 
-- Sprache: Enforce Script
-- Netzwerk: CF RPC
-- Scripts: `3_Game`, `4_World`, `5_Mission`
-- Fokus: serverautoritatives Teleport-System
-- Logging: `profiles/DeadmansEcho/TeleportOverhaul/Logs/teleport.log`
+- Language: Enforce Script
+- Network transport: CF RPC
+- Script modules: `3_Game`, `4_World`, `5_Mission`
+- Design goal: server-authoritative teleport flow
+- Log file: `profiles/DeadmansEcho/TeleportOverhaul/Logs/teleport.log`
 
 ## 🚀 Installation
 
-1. Mod in den Server- und Client-Loadorder aufnehmen
-2. Sicherstellen, dass CF geladen wird
-3. Server starten
-4. Die Profil-Dateien werden bei Bedarf automatisch erstellt
-5. Teleports in `teleport_config.json` konfigurieren
-6. Optional Preload-Daten in `teleport_preload_config.json` pflegen
-
-## 📌 Roadmap / Ideen
-
-- genauere Zielvalidierung pro Teleport
-- komfortablere Preload-Pflege für komplexe Interior-Ziele
-- optional unterschiedliche Loading-Screen-Dauern pro Teleport
-- zusätzliche visuelle Teleport-Effekte
+1. Add the mod to both server and client load order
+2. Ensure `JM_CF_Scripts` is loaded before this mod
+3. Ensure `DayZExpansion_Hardline_Scripts` is available for reputation-based menu travel
+4. Start the server once to auto-generate profile configs
+5. Adjust `teleport_config.json`, `teleport_menu_config.json`, `teleport_preload_config.json`, and `ProhibitedZones.json` as needed
 
 ## 👤 Credits
 
 - Author: Psyern
-- Basierend auf einem überarbeiteten Teleport-System für DayZ Standalone
+- Built as a standalone overhaul and merge of multiple DayZ teleport system ideas
