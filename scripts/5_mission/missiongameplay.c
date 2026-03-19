@@ -4,6 +4,7 @@ class DME_TeleportLoadingScreen
 
     protected Widget m_Root;
     protected ImageWidget m_Background;
+    protected TextWidget m_TitleText;
     protected ProgressBarWidget m_ProgressBar;
     protected int m_StartTime;
     protected int m_EndTime;
@@ -34,7 +35,12 @@ class DME_TeleportLoadingScreen
             return;
 
         m_Background = ImageWidget.Cast(m_Root.FindAnyWidget("Background"));
+        m_TitleText = TextWidget.Cast(m_Root.FindAnyWidget("Title"));
         m_ProgressBar = ProgressBarWidget.Cast(m_Root.FindAnyWidget("ProgressBar"));
+
+        if (m_TitleText)
+            m_TitleText.SetText(Widget.TranslateString("#STR_DME_TELEPORT_LOADING_PREPARING"));
+
         m_Root.Show(false);
     }
 
