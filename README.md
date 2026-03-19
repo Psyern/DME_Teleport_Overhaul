@@ -10,6 +10,7 @@
 
 - World interaction teleports placed through configured objects
 - F2 teleport menu with destination cards, cooldowns, and reputation cost support
+- Optional temporary player-name marker for GUI teleports
 - Full-screen loading screen with random `.edds` backgrounds and progress bar
 - Muted audio during loading with smooth fade-out and automatic HUD hide/show
 - Server-authoritative teleport execution with delayed client loading screen flow
@@ -92,7 +93,7 @@ Example:
 
 ```json
 {
-    "Version": 2,
+    "Version": 3,
     "RepMode": 1,
     "Destinations": [
         {
@@ -100,14 +101,16 @@ Example:
             "TeleportPos": [3700.51, 0.0, 5981.27],
             "Cost": 1200,
             "CooldownSec": 1700,
-            "Picture": 1
+            "Picture": 1,
+            "Marker": 1
         },
         {
             "TeleportName": "Krasno Airfield",
             "TeleportPos": [11880.40, 0.0, 12460.74],
             "Cost": 1800,
             "CooldownSec": 1500,
-            "Picture": 2
+            "Picture": 2,
+            "Marker": 1
         }
     ]
 }
@@ -119,6 +122,15 @@ Example:
 - `RepMode` — `0` = minimum reputation required, `1` = spend reputation on travel
 - `Destinations` — Menu destinations shown in the F2 teleport UI
 - `Picture` — Index of the GUI thumbnail texture
+- `Marker` — `1` enables a temporary player-name marker after a GUI teleport, `0` disables it
+
+### Marker Behavior
+
+- Markers are created only for teleports triggered through the F2 GUI menu
+- A marker shows the teleported player’s name at the destination position
+- Marker lifetime is 5 minutes
+- Marker becomes visible only when another player is within 10 meters of the marker position
+- `Marker = 1` is the default during migration from older menu config versions
 
 ### Picture ID Mapping
 
