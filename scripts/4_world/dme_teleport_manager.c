@@ -171,7 +171,7 @@ class DME_TeleportManager
 		{
 			DME_TeleportDestination dest = m_Config.Destinations[i];
 			int nextAvailable = GetCooldown(uid, dest.TeleportName);
-			int remainingSecs;
+			int remainingSecs = 0;
 			if (currentTime < nextAvailable)
 				remainingSecs = nextAvailable - currentTime;
 
