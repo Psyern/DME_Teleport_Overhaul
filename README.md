@@ -9,8 +9,9 @@
 ## ✨ Features
 
 - World interaction teleports placed through configured objects
-- F2 teleport menu with destination cards, cooldowns, and reputation cost support
+- F2 teleport menu with destination cards, cooldowns, and configurable economy/payment support
 - Optional temporary player-name marker for GUI teleports
+- Static source/destination portal particles with one-shot teleport sounds
 - Full-screen loading screen with random `.edds` backgrounds and progress bar
 - Muted audio during loading with smooth fade-out and automatic HUD hide/show
 - Server-authoritative teleport execution with delayed client loading screen flow
@@ -20,6 +21,7 @@
 - Auto-generated profile configs with example data and migration support
 - Localized GUI and warning messages through `stringtable.csv`
 - Teleport logging to a dedicated profile log file
+- Optional `#ifdef EXPANSIONMODHARDLINE` support so the mod does not break when Hardline is not installed
 
 ## 📁 Profile Structure
 
@@ -93,8 +95,11 @@ Example:
 
 ```json
 {
-    "Version": 3,
+    "Version": 4,
     "RepMode": 1,
+    "EconomyMode": 2,
+    "CurrencyClassName": "",
+    "CurrencyDisplayName": "#STR_DME_TELEPORT_REPUTATION",
     "Destinations": [
         {
             "TeleportName": "Green Mountain",
@@ -119,22 +124,44 @@ Example:
 ### Fields
 
 - `Version` — Config version used for migration
-- `RepMode` — `0` = minimum reputation required, `1` = spend reputation on travel
+- `RepMode` — legacy migration field kept for backward compatibility with older configs; new setups should use `EconomyMode`
+- `EconomyMode` — selects how `Cost` is interpreted and charged
+- `CurrencyClassName` — item classname used when `EconomyMode = 3`
+- `CurrencyDisplayName` — GUI label for the player balance, supports direct text or `#STR_...`
 - `Destinations` — Menu destinations shown in the F2 teleport UI
 - `Picture` — Index of the GUI thumbnail texture
 - `Marker` — `1` enables a temporary player-name marker after a GUI teleport, `0` disables it
 
-### RepMode
+### EconomyMode
 
-- `RepMode: 0` — the `Cost` value is treated as the minimum reputation a player must have to use the teleport; reputation is checked but not removed.
-- `RepMode: 1` — the `Cost` value is treated as a travel cost; the player must have enough reputation and that amount is deducted when the teleport is used successfully.
+- `EconomyMode: 0` — free travel, `Cost` is ignored for payment checks
+- `EconomyMode: 1` — minimum Hardline reputation required, reputation is checked but not removed
+- `EconomyMode: 2` — Hardline reputation cost, reputation is deducted on successful teleport
+- `EconomyMode: 3` — item-based payment, `CurrencyClassName` is counted in player inventory and reduced on successful teleport
 
-Example for `RepMode: 0`:
+### Legacy `RepMode`
+
+- Older configs may still contain `RepMode`
+- On migration, `RepMode: 0` becomes `EconomyMode: 1`
+- On migration, `RepMode: 1` becomes `EconomyMode: 2`
+- After migration, `EconomyMode` is the field that should be maintained by the server owner
+
+### Hardline Compatibility
+
+- Hardline is no longer a hard dependency in `config.cpp`
+- Reputation access is wrapped in `#ifdef EXPANSIONMODHARDLINE`
+- If a server starts without Hardline and an old Hardline-based config is found, the mod automatically resets `EconomyMode` to `0`
+- This allows server owners to switch to item-based payment without recompiling the mod
+
+### Example: Hardline reputation cost
 
 ```json
 {
-    "Version": 3,
-    "RepMode": 0,
+    "Version": 4,
+    "RepMode": 1,
+    "EconomyMode": 2,
+    "CurrencyClassName": "",
+    "CurrencyDisplayName": "#STR_DME_TELEPORT_REPUTATION",
     "Destinations": [
         {
             "TeleportName": "Green Mountain",
@@ -155,6 +182,37 @@ Example for `RepMode: 0`:
     ]
 }
 ```
+
+### Example: Item / money payment
+
+```json
+{
+    "Version": 4,
+    "RepMode": 1,
+    "EconomyMode": 3,
+    "CurrencyClassName": "ExpansionBanknoteHryvnia",
+    "CurrencyDisplayName": "Geld",
+    "Destinations": [
+        {
+            "TeleportName": "Green Mountain",
+            "TeleportPos": [3700.51, 0.0, 5981.27],
+            "Cost": 1200,
+            "CooldownSec": 17,
+            "Picture": 1,
+            "Marker": 1
+        }
+    ]
+}
+```
+
+### Item Payment Notes
+
+- `CurrencyClassName` can be any item classname available on the server
+- If the item has quantity, that quantity is used as the balance and reduced on payment
+- If the item has no quantity, each item counts as `1`
+- Item-based payment searches the player inventory recursively
+- The GUI shows `CurrencyDisplayName` instead of the fixed reputation label
+- Example item classnames can be Expansion money items such as `ExpansionBanknoteHryvnia`, `ExpansionBanknoteEuro`, or `ExpansionBanknoteUSD`
 
 ### Marker Behavior
 
@@ -280,6 +338,10 @@ The loading screen uses the following backgrounds:
 Behavior:
 
 - Duration: 12 seconds
+- GUI teleports wait 7 seconds before the loading screen appears
+- A static source portal and `teleport.ogg` play immediately on teleport selection
+- The actual teleport happens when the loading screen starts
+- 2 seconds before the loading screen ends, a static destination portal and `teleport_out.ogg` play at the target position
 - Full-screen layout with progress bar
 - Sound volume set to `0` during loading
 - Smooth fade-out before the end
@@ -294,7 +356,7 @@ The mod now ships with localized GUI and warning keys, including:
 
 - Menu title and buttons
 - Status messages
-- Reputation and cooldown labels
+- Reputation, balance, free state, and cooldown labels
 - Prohibited zone warning messages
 
 Custom warning messages in JSON can also use stringtable keys such as:
@@ -311,7 +373,8 @@ To reduce issues with incomplete terrain or underground/interior destinations, t
 - Optional `UseSurfaceSafety` correction on server-side teleport position
 - Post-teleport height recheck after a short delay
 - Object preloading before teleport begins
-- Delayed server teleport after the client loading screen finishes
+- Delayed GUI teleport scheduling before the loading screen starts
+- Arrival portal effect shortly before the loading screen ends
 
 ## 🔌 Dependencies
 
@@ -319,7 +382,10 @@ Required:
 
 - DayZ Standalone
 - DayZ Community Framework (`JM_CF_Scripts`)
-- DayZ Expansion Hardline Scripts (`DayZExpansion_Hardline_Scripts`)
+
+Optional:
+
+- DayZ Expansion Hardline Scripts (`DayZExpansion_Hardline_Scripts`) for `EconomyMode` `1` or `2`
 
 ## 🧠 Technical Notes
 
@@ -333,9 +399,17 @@ Required:
 
 1. Add the mod to both server and client load order
 2. Ensure `JM_CF_Scripts` is loaded before this mod
-3. Ensure `DayZExpansion_Hardline_Scripts` is available for reputation-based menu travel
-4. Start the server once to auto-generate profile configs
-5. Adjust `teleport_config.json`, `teleport_menu_config.json`, `teleport_preload_config.json`, and `ProhibitedZones.json` as needed
+3. If you want reputation-based travel, ensure `DayZExpansion_Hardline_Scripts` is loaded and set `EconomyMode` to `1` or `2`
+4. If you want money/item-based travel, set `EconomyMode` to `3` and configure `CurrencyClassName`
+5. Start the server once to auto-generate profile configs
+6. Adjust `teleport_config.json`, `teleport_menu_config.json`, `teleport_preload_config.json`, and `ProhibitedZones.json` as needed
+
+### Quick Setup Examples
+
+- Hardline minimum reputation: `EconomyMode = 1`
+- Hardline travel cost: `EconomyMode = 2`
+- Expansion money item cost: `EconomyMode = 3`, `CurrencyClassName = "ExpansionBanknoteHryvnia"`
+- Fully free teleports: `EconomyMode = 0`
 
 ## 👤 Credits
 

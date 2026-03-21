@@ -71,20 +71,20 @@ class DME_TeleportManager
 		string errorMsg;
 		if (!ValidatePlayerState(player, errorMsg))
 		{
-			SendTravelResult(sender, false, errorMsg, GetPlayerReputation(player), destName, 0);
+			SendTravelResult(sender, false, errorMsg, GetPlayerEconomyValue(player), destName, 0);
 			return;
 		}
 
 		DME_TeleportDestination dest = FindDestination(destName);
 		if (!dest)
 		{
-			SendTravelResult(sender, false, "Invalid destination.", GetPlayerReputation(player), destName, 0);
+			SendTravelResult(sender, false, "Invalid destination.", GetPlayerEconomyValue(player), destName, 0);
 			return;
 		}
 
 		if (IsTeleportBlocked(player, dest, errorMsg))
 		{
-			SendTravelResult(sender, false, errorMsg, GetPlayerReputation(player), destName, 0);
+			SendTravelResult(sender, false, errorMsg, GetPlayerEconomyValue(player), destName, 0);
 			return;
 		}
 
@@ -93,24 +93,21 @@ class DME_TeleportManager
 		if (currentTime < nextAvailable)
 		{
 			int remaining = nextAvailable - currentTime;
-			SendTravelResult(sender, false, "Cooldown active: " + remaining.ToString() + "s remaining.", GetPlayerReputation(player), destName, nextAvailable);
+			SendTravelResult(sender, false, "Cooldown active: " + remaining.ToString() + "s remaining.", GetPlayerEconomyValue(player), destName, nextAvailable);
 			return;
 		}
 
-		int playerRep = GetPlayerReputation(player);
-		if (playerRep < dest.Cost)
+		int playerValue = GetPlayerEconomyValue(player);
+		if (!CanAffordDestination(player, dest, playerValue))
 		{
-			SendTravelResult(sender, false, "Not enough reputation. Need " + dest.Cost.ToString() + ", have " + playerRep.ToString() + ".", playerRep, destName, 0);
+			SendTravelResult(sender, false, GetInsufficientFundsMessage(dest.Cost, playerValue), playerValue, destName, 0);
 			return;
 		}
 
-		if (m_Config && m_Config.RepMode == 1)
+		if (!TrySpendTeleportCost(player, dest.Cost))
 		{
-			if (!TrySpendReputation(player, dest.Cost))
-			{
-				SendTravelResult(sender, false, "Failed to deduct reputation.", playerRep, destName, 0);
-				return;
-			}
+			SendTravelResult(sender, false, GetSpendFailureMessage(), GetPlayerEconomyValue(player), destName, 0);
+			return;
 		}
 
 		int newNextAvailable = currentTime + dest.CooldownSec;
@@ -126,7 +123,7 @@ class DME_TeleportManager
 		BroadcastTeleportPortalEffect(markerPosition, DME_Teleport_Overhaul.GUI_TELEPORT_PARTICLE_DURATION_MS, DME_Teleport_Overhaul.GUI_TELEPORT_SOUND_SET);
 		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(ExecuteDelayedGUITeleport, DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS, false, sender, player, safePos, dest.TeleportName, dest.Marker, markerPosition);
 
-		int updatedRep = GetPlayerReputation(player);
+		int updatedRep = GetPlayerEconomyValue(player);
 		Print("[DME_Teleport_Menu] Scheduled GUI teleport for " + sender.GetName() + " (" + uid + ") to " + destName + " at " + safePos.ToString() + " after " + DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS.ToString() + "ms.");
 		SendTravelResult(sender, true, "Teleporting to " + destName + "...", updatedRep, destName, newNextAvailable);
 	}
@@ -174,7 +171,7 @@ class DME_TeleportManager
 		PlayerBase player = PlayerBase.Cast(identity.GetPlayer());
 		int reputation = 0;
 		if (player)
-			reputation = GetPlayerReputation(player);
+			reputation = GetPlayerEconomyValue(player);
 
 		int currentTime = CF_Date.Now(true).GetTimestamp();
 		string serialized = "";
@@ -192,7 +189,7 @@ class DME_TeleportManager
 			serialized += dest.TeleportName + "|" + dest.Cost.ToString() + "|" + dest.CooldownSec.ToString() + "|" + remainingSecs.ToString() + "|" + dest.Picture.ToString();
 		}
 
-		GetRPCManager().SendRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_STATE, new Param3<int, int, string>(reputation, m_Config.RepMode, serialized), true, identity);
+		GetRPCManager().SendRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_STATE, new Param4<int, int, string, string>(reputation, m_Config.EconomyMode, serialized, GetEconomyDisplayName()), true, identity);
 	}
 
 	private void SendTravelResult(PlayerIdentity identity, bool success, string message, int updatedRep, string destName, int nextAvailableTime)
@@ -373,24 +370,181 @@ class DME_TeleportManager
 		playerCooldowns.Set(destName, nextAvailableTime);
 	}
 
-	int GetPlayerReputation(PlayerBase player)
+	int GetPlayerEconomyValue(PlayerBase player)
 	{
-		if (!player)
+		if (!player || !m_Config)
 			return 0;
 
-		return player.Expansion_GetReputation();
+		switch (m_Config.EconomyMode)
+		{
+			case DME_Teleport_Constants.ECONOMY_MODE_ITEM:
+				return GetPlayerItemBalance(player);
+
+			case DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP:
+			case DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST:
+				#ifdef EXPANSIONMODHARDLINE
+				return player.Expansion_GetReputation();
+				#else
+				return 0;
+				#endif
+		}
+
+		return 0;
 	}
 
-	bool TrySpendReputation(PlayerBase player, int amount)
+	bool TrySpendTeleportCost(PlayerBase player, int amount)
 	{
-		if (!player)
-			return false;
+		if (!player || !m_Config || amount <= 0)
+			return true;
 
-		int current = GetPlayerReputation(player);
-		if (current < amount)
-			return false;
+		switch (m_Config.EconomyMode)
+		{
+			case DME_Teleport_Constants.ECONOMY_MODE_NONE:
+			case DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP:
+				return true;
 
-		player.Expansion_DecreaseReputation(amount);
+			case DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST:
+				#ifdef EXPANSIONMODHARDLINE
+				int current = GetPlayerEconomyValue(player);
+				if (current < amount)
+					return false;
+
+				player.Expansion_DecreaseReputation(amount);
+				return true;
+				#else
+				return false;
+				#endif
+
+			case DME_Teleport_Constants.ECONOMY_MODE_ITEM:
+				return TrySpendItemCurrency(player, amount);
+		}
+
 		return true;
+	}
+
+	private bool CanAffordDestination(PlayerBase player, DME_TeleportDestination dest, int playerValue)
+	{
+		if (!dest || !m_Config)
+			return false;
+
+		if (m_Config.EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_NONE)
+			return true;
+
+		return playerValue >= dest.Cost;
+	}
+
+	private string GetEconomyDisplayName()
+	{
+		if (m_Config && m_Config.CurrencyDisplayName != string.Empty)
+			return m_Config.CurrencyDisplayName;
+
+		if (m_Config && (m_Config.EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP || m_Config.EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST))
+			return "#STR_DME_TELEPORT_REPUTATION";
+
+		return "#STR_DME_TELEPORT_BALANCE";
+	}
+
+	private string GetInsufficientFundsMessage(int required, int current)
+	{
+		if (m_Config && (m_Config.EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP || m_Config.EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST))
+			return "Not enough reputation. Need " + required.ToString() + ", have " + current.ToString() + ".";
+
+		return "Not enough funds. Need " + required.ToString() + ", have " + current.ToString() + ".";
+	}
+
+	private string GetSpendFailureMessage()
+	{
+		if (m_Config && m_Config.EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_ITEM)
+			return "Failed to deduct payment item.";
+
+		if (m_Config && m_Config.EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST)
+			return "Failed to deduct reputation.";
+
+		return "Failed to deduct teleport cost.";
+	}
+
+	private int GetPlayerItemBalance(PlayerBase player)
+	{
+		if (!player || !m_Config || m_Config.CurrencyClassName == string.Empty)
+			return 0;
+
+		array<EntityAI> items = new array<EntityAI>;
+		items.Reserve(player.GetInventory().CountInventory());
+		player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, items);
+
+		int total;
+		foreach (EntityAI entity : items)
+		{
+			ItemBase item;
+			if (!Class.CastTo(item, entity))
+				continue;
+
+			if (!item.IsKindOf(m_Config.CurrencyClassName))
+				continue;
+
+			total += GetCurrencyItemAmount(item);
+		}
+
+		return total;
+	}
+
+	private bool TrySpendItemCurrency(PlayerBase player, int amount)
+	{
+		if (!player || !m_Config || m_Config.CurrencyClassName == string.Empty)
+			return false;
+
+		int remaining = amount;
+		array<EntityAI> items = new array<EntityAI>;
+		items.Reserve(player.GetInventory().CountInventory());
+		player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, items);
+
+		foreach (EntityAI entity : items)
+		{
+			if (remaining <= 0)
+				break;
+
+			ItemBase item;
+			if (!Class.CastTo(item, entity))
+				continue;
+
+			if (!item.IsKindOf(m_Config.CurrencyClassName))
+				continue;
+
+			int itemAmount = GetCurrencyItemAmount(item);
+			if (itemAmount <= 0)
+				continue;
+
+			if (item.HasQuantity())
+			{
+				if (itemAmount <= remaining)
+				{
+					remaining = remaining - itemAmount;
+					GetGame().ObjectDelete(item);
+				}
+				else
+				{
+					item.SetQuantity(item.GetQuantity() - remaining);
+					remaining = 0;
+				}
+			}
+			else
+			{
+				remaining = remaining - 1;
+				GetGame().ObjectDelete(item);
+			}
+		}
+
+		return remaining <= 0;
+	}
+
+	private int GetCurrencyItemAmount(ItemBase item)
+	{
+		if (!item)
+			return 0;
+
+		if (item.HasQuantity())
+			return (int)Math.Floor(item.GetQuantity());
+
+		return 1;
 	}
 };

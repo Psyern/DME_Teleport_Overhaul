@@ -48,6 +48,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 
 	private int m_PlayerReputation;
 	private int m_RepMode;
+	private string m_EconomyLabelText;
 	private ref array<ref DME_TeleportDestRow> m_Rows;
 	private float m_UpdateTimer;
 
@@ -55,6 +56,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 	{
 		m_Rows = new array<ref DME_TeleportDestRow>;
 		m_UpdateTimer = 0;
+		m_EconomyLabelText = "#STR_DME_TELEPORT_REPUTATION";
 
 		GetRPCManager().AddRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_STATE, this, SingleplayerExecutionType.Client);
 		GetRPCManager().AddRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.TRAVEL_RESULT, this, SingleplayerExecutionType.Client);
@@ -93,7 +95,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 				m_StatusText.SetText(TranslateText("#STR_DME_TELEPORT_LOADING"));
 
 			if (m_ReputationText)
-				m_ReputationText.SetText(string.Format(TranslateText("#STR_DME_TELEPORT_REPUTATION_FORMAT"), TranslateText("#STR_DME_TELEPORT_REPUTATION"), "---"));
+				m_ReputationText.SetText(string.Format(TranslateText("#STR_DME_TELEPORT_REPUTATION_FORMAT"), GetEconomyLabelText(), "---"));
 		}
 
 		return layoutRoot;
@@ -166,20 +168,21 @@ class DME_TeleportMenu extends UIScriptedMenu
 		if (type != CallType.Client)
 			return;
 
-		Param3<int, int, string> data = new Param3<int, int, string>(0, 1, "");
+		Param4<int, int, string, string> data = new Param4<int, int, string, string>(0, 1, "", "#STR_DME_TELEPORT_REPUTATION");
 		if (!ctx.Read(data))
 			return;
 
 		m_PlayerReputation = data.param1;
 		m_RepMode = data.param2;
 		string serialized = data.param3;
+		m_EconomyLabelText = data.param4;
 
 		if (m_ReputationText)
-			m_ReputationText.SetText(string.Format(TranslateText("#STR_DME_TELEPORT_REPUTATION_FORMAT"), TranslateText("#STR_DME_TELEPORT_REPUTATION"), m_PlayerReputation.ToString()));
+			m_ReputationText.SetText(string.Format(TranslateText("#STR_DME_TELEPORT_REPUTATION_FORMAT"), GetEconomyLabelText(), GetEconomyValueText()));
 
 		if (m_HeaderCostText)
 		{
-			if (m_RepMode == 0)
+			if (m_RepMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP)
 				m_HeaderCostText.SetText(TranslateText("#STR_DME_TELEPORT_MIN_REP"));
 			else
 				m_HeaderCostText.SetText(TranslateText("#STR_DME_TELEPORT_COST"));
@@ -243,7 +246,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 		string destName = data.param4;
 
 		if (m_ReputationText)
-			m_ReputationText.SetText(string.Format(TranslateText("#STR_DME_TELEPORT_REPUTATION_FORMAT"), TranslateText("#STR_DME_TELEPORT_REPUTATION"), m_PlayerReputation.ToString()));
+			m_ReputationText.SetText(string.Format(TranslateText("#STR_DME_TELEPORT_REPUTATION_FORMAT"), GetEconomyLabelText(), GetEconomyValueText()));
 
 		if (m_StatusText)
 			m_StatusText.SetText(TranslateText(message));
@@ -326,7 +329,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 				}
 
 				if (row.TravelBtn)
-					row.TravelBtn.Enable(m_PlayerReputation >= row.Cost);
+					row.TravelBtn.Enable(CanAffordRow(row));
 			}
 			else
 			{
@@ -371,5 +374,35 @@ class DME_TeleportMenu extends UIScriptedMenu
 	override bool UseMouse()
 	{
 		return true;
+	}
+
+	private bool CanAffordRow(DME_TeleportDestRow row)
+	{
+		if (!row)
+			return false;
+
+		if (m_RepMode == DME_Teleport_Constants.ECONOMY_MODE_NONE)
+			return true;
+
+		return m_PlayerReputation >= row.Cost;
+	}
+
+	private string GetEconomyLabelText()
+	{
+		if (m_EconomyLabelText != string.Empty)
+			return TranslateText(m_EconomyLabelText);
+
+		if (m_RepMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP || m_RepMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST)
+			return TranslateText("#STR_DME_TELEPORT_REPUTATION");
+
+		return TranslateText("#STR_DME_TELEPORT_BALANCE");
+	}
+
+	private string GetEconomyValueText()
+	{
+		if (m_RepMode == DME_Teleport_Constants.ECONOMY_MODE_NONE)
+			return TranslateText("#STR_DME_TELEPORT_FREE");
+
+		return m_PlayerReputation.ToString();
 	}
 };

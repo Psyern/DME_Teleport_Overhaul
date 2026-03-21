@@ -27,12 +27,22 @@ class DME_TeleportConfig
 {
 	int Version;
 	int RepMode;
+	int EconomyMode;
+	string CurrencyClassName;
+	string CurrencyDisplayName;
 	ref array<ref DME_TeleportDestination> Destinations;
 
 	void DME_TeleportConfig()
 	{
-		Version = 3;
+		Version = 4;
 		RepMode = 1;
+		#ifdef EXPANSIONMODHARDLINE
+		EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST;
+		#else
+		EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_NONE;
+		#endif
+		CurrencyClassName = string.Empty;
+		CurrencyDisplayName = "#STR_DME_TELEPORT_BALANCE";
 		Destinations = new array<ref DME_TeleportDestination>;
 	}
 };
@@ -94,6 +104,42 @@ class DME_TeleportConfigLoader
 				migrated = true;
 			}
 
+			if (config && config.Version < 4)
+			{
+				#ifdef EXPANSIONMODHARDLINE
+				if (config.RepMode == 0)
+					config.EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP;
+				else
+					config.EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST;
+				#else
+				config.EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_NONE;
+				#endif
+
+				if (config.CurrencyDisplayName == string.Empty)
+					config.CurrencyDisplayName = "#STR_DME_TELEPORT_BALANCE";
+
+				config.Version = 4;
+				migrated = true;
+			}
+
+			if (config)
+			{
+				if (config.CurrencyDisplayName == string.Empty)
+				{
+					config.CurrencyDisplayName = "#STR_DME_TELEPORT_BALANCE";
+					migrated = true;
+				}
+
+				#ifndef EXPANSIONMODHARDLINE
+				if (config.EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP || config.EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST)
+				{
+					config.EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_NONE;
+					migrated = true;
+					Print("[DME_Teleport_Menu] Hardline not detected. EconomyMode reset to NONE. Configure CurrencyClassName and EconomyMode=3 for item-based payment.");
+				}
+				#endif
+			}
+
 			if (config && config.Destinations && config.Destinations.Count() > 0)
 			{
 				if (migrated)
@@ -124,8 +170,15 @@ class DME_TeleportConfigLoader
 	static ref DME_TeleportConfig CreateDefaults()
 	{
 		ref DME_TeleportConfig config = new DME_TeleportConfig();
-		config.Version = 3;
+		config.Version = 4;
 		config.RepMode = 1;
+		#ifdef EXPANSIONMODHARDLINE
+		config.EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST;
+		#else
+		config.EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_NONE;
+		#endif
+		config.CurrencyClassName = string.Empty;
+		config.CurrencyDisplayName = "#STR_DME_TELEPORT_BALANCE";
 
 		ref DME_TeleportDestination greenMtn = new DME_TeleportDestination();
 		greenMtn.TeleportName = "Green Mountain";

@@ -62,6 +62,10 @@ class DME_Teleport_Overhaul
 class DME_Teleport_Constants
 {
     static const int DME_TELEPORT_MENU = 35002;
+    static const int ECONOMY_MODE_NONE = 0;
+    static const int ECONOMY_MODE_HARDLINE_MIN_REP = 1;
+    static const int ECONOMY_MODE_HARDLINE_COST = 2;
+    static const int ECONOMY_MODE_ITEM = 3;
     static const string CONFIG_FOLDER = "$profile:DeadmansEcho/TeleportOverhaul";
     static const string CONFIG_FILE = "$profile:DeadmansEcho/TeleportOverhaul/teleport_menu_config.json";
     static const string PROHIBITED_ZONES_FILE = "$profile:DeadmansEcho/TeleportOverhaul/ProhibitedZones.json";

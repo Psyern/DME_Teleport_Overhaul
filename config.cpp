@@ -10,8 +10,7 @@ class CfgPatches
 			"DZ_Data",
 			"DZ_scripts",
 			"DZ_Sounds_Effects",
-			"JM_CF_Scripts",
-			"DayZExpansion_Hardline_Scripts"
+			"JM_CF_Scripts"
 		};
 	};
 };
