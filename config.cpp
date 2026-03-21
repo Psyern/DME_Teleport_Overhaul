@@ -9,6 +9,7 @@ class CfgPatches
 		{
 			"DZ_Data",
 			"DZ_scripts",
+			"DZ_Sounds_Effects",
 			"JM_CF_Scripts",
 			"DayZExpansion_Hardline_Scripts"
 		};
@@ -65,6 +66,50 @@ class CfgMods
 				};
 			};
 		};
+	};
+};
+class CfgSoundShaders
+{
+	class DME_TeleportPortal_SoundShader
+	{
+		samples[] = {{"DME_Teleport_Overhaul\sounds\teleport", 1}};
+		volume = 1.0;
+		range = 60;
+		rangeCurve[] = {{0, 1}, {20, 1}, {60, 0}};
+	};
+	class DME_TeleportPortalOut_SoundShader
+	{
+		samples[] = {{"DME_Teleport_Overhaul\sounds\teleport_out", 1}};
+		volume = 1.0;
+		range = 60;
+		rangeCurve[] = {{0, 1}, {20, 1}, {60, 0}};
+	};
+};
+class CfgSoundSets
+{
+	class DME_TeleportPortal_SoundSet
+	{
+		soundShaders[] = {"DME_TeleportPortal_SoundShader"};
+		volumeFactor = 1.0;
+		frequencyFactor = 1.0;
+		spatial = 1;
+		loop = 0;
+		sound3DProcessingType = "character3DProcessingType";
+		volumeCurve = "characterAttenuationCurve";
+		distanceFilter = "defaultDistanceFilter";
+		doppler = 0;
+	};
+	class DME_TeleportPortalOut_SoundSet
+	{
+		soundShaders[] = {"DME_TeleportPortalOut_SoundShader"};
+		volumeFactor = 1.0;
+		frequencyFactor = 1.0;
+		spatial = 1;
+		loop = 0;
+		sound3DProcessingType = "character3DProcessingType";
+		volumeCurve = "characterAttenuationCurve";
+		distanceFilter = "defaultDistanceFilter";
+		doppler = 0;
 	};
 };
 class CfgVehicles

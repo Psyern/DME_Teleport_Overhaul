@@ -1,6 +1,7 @@
 Language,original,english,czech,german,russian,polish,hungarian,italian,spanish,french,chinese,japanese,portuguese,chinesesimp
 STR_DME_TELEPORT_TITLE,"DME Teleport","DME Teleport","DME Teleport","DME Teleport","DME Teleport","DME Teleport","DME Teleport","DME Teleport","DME Teleport","DME Teleport","DME Teleport","DME Teleport","DME Teleport","DME Teleport"
-STR_DME_TELEPORT_LOADING,"Loading...","Loading...","Loading...","Lade...","Загрузка...","Loading...","Loading...","Loading...","Loading...","Chargement...","加载中...","Loading...","Loading...","加载中..."STR_DME_TELEPORT_REPUTATION,"Reputation","Reputation","Reputation","Ruf","Репутация","Reputation","Reputation","Reputation","Reputation","Réputation","声望","Reputation","Reputation","声望"
+STR_DME_TELEPORT_LOADING,"Loading...","Loading...","Loading...","Lade...","Загрузка...","Loading...","Loading...","Loading...","Loading...","Chargement...","加载中...","Loading...","Loading...","加载中..."
+STR_DME_TELEPORT_REPUTATION,"Reputation","Reputation","Reputation","Ruf","Репутация","Reputation","Reputation","Reputation","Reputation","Réputation","声望","Reputation","Reputation","声望"
 STR_DME_TELEPORT_REQUESTING_DATA,"Requesting data...","Requesting data...","Requesting data...","Daten werden angefordert...","Запрос данных...","Requesting data...","Requesting data...","Requesting data...","Requesting data...","Demande des données...","正在请求数据...","Requesting data...","Requesting data...","正在请求数据..."
 STR_DME_TELEPORT_MIN_REP,"Min Rep","Min Rep","Min Rep","Min. Ruf","Мин. репутация","Min Rep","Min Rep","Min Rep","Min Rep","Réputation min.","最低声望","Min Rep","Min Rep","最低声望"
 STR_DME_TELEPORT_COST,"Cost","Cost","Cost","Kosten","Стоимость","Cost","Cost","Cost","Cost","Coût","花费","Cost","Cost","花费"

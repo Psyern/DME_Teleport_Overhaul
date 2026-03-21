@@ -1,0 +1,5 @@
+Particle {
+ AlbedoMap "DME_Teleport_Overhaul/data/sparkles.edds"
+ Emissive 0 0 0 1
+ BlendMode Additive_AlphaModulate
+}

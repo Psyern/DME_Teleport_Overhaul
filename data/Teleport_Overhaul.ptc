@@ -1,0 +1,183 @@
+EffectDef {
+ Emitors {
+  EmitorDef outer_ring {
+   ShapeType Box
+   ShapeSize 0 0 0
+   ConeAngle 0 0 1000
+   MaxNum 150
+   BirthRate 50
+   BirthRateRND 10
+   BirthRateVel 100
+   Offset 0 1.2 0
+   Angles 0 0 0
+   Material "DME_Teleport_Overhaul/data/outer_ring.emat"
+   CenterX 1
+   CenterY 1
+   ScaleX 0.1
+   ScaleY 0.1
+   SizeMultiplier 15
+   SizeRND 0
+   RandomRotDir 0
+   RotMultiplier 0
+   StretchMultiplier 0
+   StreakFullUV 0
+   VelAngle 1
+   RandomAngle 0
+   Sort 0
+   BillboardingType LockedAxis
+   Velocity 90
+   VelocityRND 50
+   VelAffect 10
+   Spring 1
+   Wind 0
+   AnimOnce 0
+   AnimFPS 60
+   LifetimeByAnim 0
+   RandomFrame 0
+   LifeTime 12
+   LifeTimeRND 12
+   Color {
+    0 0.3187 0 0.022 0.4994 0.0471 0.0629 0.7451 1 0.3187 0 0.0198
+   }
+   Alpha {
+    0 1 0.88542 1 1 0
+   }
+   RotationSpeed {
+    0 1 0.49939 1 1 1
+   }
+   Size {
+    0 1 1 1
+   }
+   EffectTime 12
+   Repeat 1
+   SizeMast {
+    0 1 0.3337 1 0.70049 0.29932 1 0
+   }
+   BRateMast {
+    0 1 0.26637 1 0.33185 0 1 0
+   }
+  }
+  EmitorDef inner_ring {
+   ShapeType Box
+   ShapeSize 0 0 0
+   ConeAngle 0 0 1000
+   MaxNum 120
+   BirthRate 50
+   BirthRateRND 3
+   BirthRateVel 0
+   Offset 0 1.2 0
+   Angles 0 0 0
+   Material "DME_Teleport_Overhaul/data/inner_ring.emat"
+   CenterX 1
+   CenterY 1
+   ScaleX 0.2
+   ScaleY 0.2
+   SizeMultiplier 5
+   SizeRND 0
+   RandomRotDir 1
+   RotMultiplier 0
+   StretchMultiplier 0
+   StreakFullUV 0
+   VelAngle 1
+   RandomAngle 0
+   Sort 0
+   BillboardingType LockedAxis
+   Velocity 90
+   VelocityRND 50
+   VelAffect 10
+   Spring 1
+   Wind 0
+   AnimOnce 0
+   AnimFPS 60
+   LifetimeByAnim 0
+   RandomFrame 1
+   LifeTime 12
+   LifeTimeRND 12
+   LifetimeShortening 0
+   Color {
+    0 0.3187 0 0.022 0.4994 0.0471 0.0629 0.7451 1 0.3187 0 0.0198
+   }
+   Alpha {
+    0 0.28125 0.25 1 0.50244 0.2625 0.74939 1 1 0.26875
+   }
+   Size {
+    0 1 1 1
+   }
+   EffectTime 12
+   Repeat 1
+   AlphaMast {
+    0 0 0.25 0.74375 0.50122 0.36875 0.74939 0.75625 1 0
+   }
+   SizeMast {
+    0 1 0.3337 1 0.70049 0.29932 1 0
+   }
+   BRateMast {
+    0 1 0.26637 1 0.33185 0 0.66646 0.0125 0.75122 1 1 1
+   }
+  }
+  EmitorDef glow {
+   ConeAngle 0 0 0
+   MaxNum 1
+   BirthRate 1
+   Offset 0 1.2 0
+   LocalTransform 0
+   Material "{57B8EA908CA750E1}graphics/particles/materials/glow/flare_light.emat"
+   ScaleX 1
+   ScaleY 1
+   SizeMultiplier 4
+   SizeRND 4
+   StreakFullUV 0
+   BillboardingType LockedAxis
+   Velocity 0
+   AnimOnce 0
+   AnimFPS 24
+   LifetimeByAnim 1
+   LifeTime 12
+   Color {
+    0 0.0471 0.0629 0.7451 0.4994 0.5569 0 0 1 0 0.0084 0.5059
+   }
+   Alpha {
+    0 1 1 1
+   }
+   Size {
+    0 0.49375 0.25061 0.7375 0.50122 0.50625 0.75 0.75625 1 0.5125
+   }
+   EffectTime 12
+   SizeMast {
+    0 0.5125 0.50183 1 1 0.53125
+   }
+   BRateMast {
+    0 0.98125 0.50427 1 1 1
+   }
+  }
+  EmitorDef sparkles {
+   ShapeType Sphere
+   ShapeSize 5 0 5
+   ConeAngle 0 0 0
+   MaxNum 100
+   BirthRate 20
+   Offset 0 0 0
+   Material "DME_Teleport_Overhaul/data/sparkles.emat"
+   SizeMultiplier 0.05
+   SizeRND 0.09
+   RandomRotDir 0
+   RandomAngle 1
+   Velocity 0.3
+   VelocityRND 1
+   AirResistance 1
+   Spring 0
+   AnimOnce 0
+   AnimFPS 20
+   LifetimeByAnim 1
+   LifeTime 2
+   LifeTimeRND 0.2
+   Color {
+    0 0.5686 0 0 0.4982 1 1 1 1 1 0 0
+   }
+   Alpha {
+    0 1 0.499 1 1 0
+   }
+   EffectTime 5
+  }
+ }
+}

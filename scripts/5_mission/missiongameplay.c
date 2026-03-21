@@ -1,6 +1,6 @@
 class DME_TeleportLoadingScreen
 {
-    protected static const float FADE_DURATION_MS = 1500.0;
+    protected static const float FADE_DURATION_MS = 2000.0;
 
     protected Widget m_Root;
     protected ImageWidget m_Background;
@@ -247,15 +247,26 @@ class DME_TeleportPlayerMarker
     }
 }
 
-class DME_TeleportParticleEffect
+class DME_TeleportPortalEffect
 {
+    protected vector m_WorldPosition;
     protected Particle m_Particle;
+    protected EffectSound m_Sound;
     protected int m_ExpireTime;
 
-    void DME_TeleportParticleEffect(vector worldPosition, int durationMs)
+    void DME_TeleportPortalEffect(vector worldPosition, int durationMs, string soundSet)
     {
+        m_WorldPosition = worldPosition;
         m_ExpireTime = GetGame().GetTime() + durationMs;
-        m_Particle = Particle.PlayInWorld(ParticleList.DME_OVERHAUL_TELEPORT_PTC, worldPosition);
+
+        m_Particle = Particle.PlayInWorld(ParticleList.DME_OVERHAUL_TELEPORT_PTC, m_WorldPosition);
+
+        if (soundSet != string.Empty)
+        {
+            m_Sound = SEffectManager.PlaySound(soundSet, m_WorldPosition);
+            if (m_Sound)
+                m_Sound.SetAutodestroy(true);
+        }
     }
 
     bool Update()
@@ -269,6 +280,12 @@ class DME_TeleportParticleEffect
 
     void Destroy()
     {
+        if (m_Sound)
+        {
+            SEffectManager.DestroyEffect(m_Sound);
+            m_Sound = null;
+        }
+
         if (!m_Particle)
             return;
 
@@ -284,7 +301,7 @@ modded class MissionGameplay
 	private ref DME_TeleportMenu m_DMETeleportMenu;
 	private bool m_DMETeleportMenuOpen;
     protected ref array<ref DME_TeleportPlayerMarker> m_DME_TeleportMarkers;
-    protected ref array<ref DME_TeleportParticleEffect> m_DME_TeleportParticles;
+    protected ref array<ref DME_TeleportPortalEffect> m_DME_TeleportParticles;
 
     override void OnInit()
     {
@@ -297,7 +314,7 @@ modded class MissionGameplay
 			m_DME_TeleportMarkers = new array<ref DME_TeleportPlayerMarker>;
 
         if (!m_DME_TeleportParticles)
-            m_DME_TeleportParticles = new array<ref DME_TeleportParticleEffect>;
+            m_DME_TeleportParticles = new array<ref DME_TeleportPortalEffect>;
 
 		m_DMETeleportMenuOpen = false;
 
@@ -418,14 +435,14 @@ modded class MissionGameplay
         if (type != CallType.Client)
             return;
 
-        Param2<vector, int> data = new Param2<vector, int>(vector.Zero, 0);
+        Param3<vector, int, string> data = new Param3<vector, int, string>(vector.Zero, 0, string.Empty);
         if (!ctx.Read(data))
             return;
 
         if (!m_DME_TeleportParticles)
-            m_DME_TeleportParticles = new array<ref DME_TeleportParticleEffect>;
+            m_DME_TeleportParticles = new array<ref DME_TeleportPortalEffect>;
 
-        m_DME_TeleportParticles.Insert(new DME_TeleportParticleEffect(data.param1, data.param2));
+        m_DME_TeleportParticles.Insert(new DME_TeleportPortalEffect(data.param1, data.param2, data.param3));
     }
 
     protected void UpdateTeleportMarkers()
@@ -450,7 +467,7 @@ modded class MissionGameplay
 
         for (int particleIndex = m_DME_TeleportParticles.Count() - 1; particleIndex >= 0; particleIndex--)
         {
-            DME_TeleportParticleEffect particleEffect = m_DME_TeleportParticles[particleIndex];
+            DME_TeleportPortalEffect particleEffect = m_DME_TeleportParticles[particleIndex];
             if (particleEffect && particleEffect.Update())
                 continue;
 
@@ -477,7 +494,7 @@ modded class MissionGameplay
         if (!m_DME_TeleportParticles)
             return;
 
-        foreach (DME_TeleportParticleEffect particleEffect : m_DME_TeleportParticles)
+        foreach (DME_TeleportPortalEffect particleEffect : m_DME_TeleportParticles)
         {
             if (particleEffect)
                 particleEffect.Destroy();

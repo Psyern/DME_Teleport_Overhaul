@@ -1,0 +1,7 @@
+Particle {
+ AlbedoMap "DME_Teleport_Overhaul/data/outer_ring.edds"
+ Emissive 1 1 1 0
+ BlendMode Additive_AlphaModulate
+ TileU 5
+ TileV 6
+}

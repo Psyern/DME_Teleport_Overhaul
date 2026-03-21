@@ -9,10 +9,14 @@ class DME_Teleport_Overhaul
     static const string RPC_SHOW_LOADING_SCREEN = "ShowTeleportLoadingScreen";
     static const string RPC_SHOW_TELEPORT_MARKER = "ShowTeleportMarker";
     static const string RPC_SHOW_TELEPORT_PARTICLE = "ShowTeleportParticle";
+    static const string GUI_TELEPORT_SOUND_SET = "DME_TeleportPortal_SoundSet";
+    static const string GUI_TELEPORT_OUT_SOUND_SET = "DME_TeleportPortalOut_SoundSet";
     static const int LOADING_SCREEN_DURATION_MS = 12000;
-    static const int GUI_TELEPORT_DELAY_MS = 2000;
+    static const int GUI_TELEPORT_DELAY_MS = 7000;
     static const int ACTION_TELEPORT_DELAY_MS = 1000;
-    static const int GUI_TELEPORT_PARTICLE_DURATION_MS = 5000;
+    static const int GUI_TELEPORT_PARTICLE_DURATION_MS = 7000;
+    static const int TELEPORT_ARRIVAL_EFFECT_LEAD_MS = 2000;
+    static const int TELEPORT_ARRIVAL_EFFECT_DURATION_MS = 2000;
     static const int GUI_TELEPORT_MARKER_DURATION_MS = 300000;
     static const float TELEPORT_SURFACE_OFFSET = 0.35;
     static const int TELEPORT_POSITION_RECHECK_DELAY_MS = 1200;

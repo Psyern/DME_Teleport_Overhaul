@@ -1,0 +1,5 @@
+Particle {
+ AlbedoMap "DME_Teleport_Overhaul/data/inner_ring.edds"
+ BlendMode Additive_AlphaModulate
+ Emissive 1 1 1 0
+}
