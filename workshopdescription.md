@@ -91,6 +91,15 @@ Repacking is allowed if you leave a favorite and give the Workshop page a thumbs
 
 [hr][/hr]
 
+[h1]Open Source[/h1]
+────────────────────────────────────────
+
+This mod is open source:
+
+[url=https://github.com/Psyern/DME_Teleport_Overhaul]https://github.com/Psyern/DME_Teleport_Overhaul[/url]
+
+[hr][/hr]
+
 [h1]My Other Mods[/h1]
 ────────────────────────────────────────
 
