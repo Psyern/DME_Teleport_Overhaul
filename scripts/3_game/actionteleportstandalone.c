@@ -25,7 +25,7 @@ class DME_Teleport_Overhaul
 
     static void EnsureDirectories()
     {
-        ref array<string> directories = { ROOT_DIRECTORY, LOG_DIRECTORY };
+        ref array<string> directories = { "$profile:DeadmansEcho", ROOT_DIRECTORY, LOG_DIRECTORY };
 
         foreach (string directory : directories)
         {

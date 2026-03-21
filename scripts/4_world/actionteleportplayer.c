@@ -296,7 +296,7 @@ class DME_Teleport_OverhaulPoint extends ItemBase
         return false;
     }
 
-    override bool CanPutIntoHands( EntityAI player )
+    override bool CanPutIntoHands( EntityAI parent )
     {
         if( !super.CanPutIntoHands( parent ) )
         {

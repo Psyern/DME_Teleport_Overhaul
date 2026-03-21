@@ -44,7 +44,10 @@ class DME_OverhaulJsonConfigManager
         else
         {
             CreateDefaultPreloadConfig();
-            return LoadTeleportPreloadConfig();
+            if (FileExist(configFilePath))
+                return LoadTeleportPreloadConfig();
+
+            Print("[DME_Teleport_Overhaul] ERROR: Failed to create preload config. Directory may not exist.");
         }
 
         bool changed = EnsurePreloadDefaults(config);
@@ -88,9 +91,11 @@ class DME_OverhaulJsonConfigManager
         }
         else
         {
-            // Если конфиг не найден, создаем новый
             CreateDefaultConfig();
-            return LoadTeleportConfig();  // Загружаем конфиг после его создания
+            if (FileExist(configFilePath))
+                return LoadTeleportConfig();
+
+            Print("[DME_Teleport_Overhaul] ERROR: Failed to create teleport config. Directory may not exist.");
         }
 
         ApplyPreloadConfig(config, LoadTeleportPreloadConfig());

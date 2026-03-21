@@ -13,7 +13,7 @@ class DME_OverhaulTeleportHelper
             Print("Object " + objectType + " created at position: " + objectCoordinates.ToString());
 
             // Спавним невидимый объект для взаимодействия
-            DME_Teleport_OverhaulPoint interactionObj = GetGame().CreateObjectEx("DME_Teleport_OverhaulPoint", objectCoordinates, ECE_NOSURFACEALIGN, RF_IGNORE);
+            DME_Teleport_OverhaulPoint interactionObj = DME_Teleport_OverhaulPoint.Cast(GetGame().CreateObjectEx("DME_Teleport_OverhaulPoint", objectCoordinates, ECE_NOSURFACEALIGN, RF_IGNORE));
             if (interactionObj)
             {
                 // ActionInteractBase action = new DME_Teleport_OverhaulAction();

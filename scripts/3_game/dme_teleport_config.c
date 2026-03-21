@@ -6,12 +6,16 @@ class DME_TeleportDestination
 	int CooldownSec;
 	int Picture;
 	int Marker;
+	int Expansion_Quest_Enable;
+	int Expansion_Quest_ID;
 
 	void DME_TeleportDestination()
 	{
 		TeleportPos = new array<float>;
 		Picture = 1;
 		Marker = 1;
+		Expansion_Quest_Enable = 0;
+		Expansion_Quest_ID = -1;
 	}
 
 	vector GetPosition()
@@ -34,7 +38,7 @@ class DME_TeleportConfig
 
 	void DME_TeleportConfig()
 	{
-		Version = 4;
+		Version = 5;
 		RepMode = 1;
 		#ifdef EXPANSIONMODHARDLINE
 		EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST;
@@ -122,6 +126,25 @@ class DME_TeleportConfigLoader
 				migrated = true;
 			}
 
+			if (config && config.Version < 5)
+			{
+				if (config.Destinations)
+				{
+					for (int questIndex = 0; questIndex < config.Destinations.Count(); questIndex++)
+					{
+						DME_TeleportDestination questDest = config.Destinations[questIndex];
+						if (!questDest)
+							continue;
+
+						questDest.Expansion_Quest_Enable = 0;
+						questDest.Expansion_Quest_ID = -1;
+					}
+				}
+
+				config.Version = 5;
+				migrated = true;
+			}
+
 			if (config)
 			{
 				if (config.CurrencyDisplayName == string.Empty)
@@ -170,7 +193,7 @@ class DME_TeleportConfigLoader
 	static ref DME_TeleportConfig CreateDefaults()
 	{
 		ref DME_TeleportConfig config = new DME_TeleportConfig();
-		config.Version = 4;
+		config.Version = 5;
 		config.RepMode = 1;
 		#ifdef EXPANSIONMODHARDLINE
 		config.EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST;

@@ -88,6 +88,12 @@ class DME_TeleportManager
 			return;
 		}
 
+		if (!CheckQuestRequirement(player, dest, errorMsg))
+		{
+			SendTravelResult(sender, false, errorMsg, GetPlayerEconomyValue(player), destName, 0);
+			return;
+		}
+
 		int currentTime = CF_Date.Now(true).GetTimestamp();
 		int nextAvailable = GetCooldown(uid, dest.TeleportName);
 		if (currentTime < nextAvailable)
@@ -546,5 +552,36 @@ class DME_TeleportManager
 			return (int)Math.Floor(item.GetQuantity());
 
 		return 1;
+	}
+
+	private bool CheckQuestRequirement(PlayerBase player, DME_TeleportDestination dest, out string errorMsg)
+	{
+		errorMsg = "";
+
+		if (!dest || dest.Expansion_Quest_Enable != 1)
+			return true;
+
+		if (dest.Expansion_Quest_ID < 0)
+			return true;
+
+		#ifdef EXPANSIONMODQUESTS
+		if (!player || !player.GetIdentity())
+			return false;
+
+		ExpansionQuestModule questModule = ExpansionQuestModule.GetModuleInstance();
+		if (!questModule)
+		{
+			Print("[DME_Teleport_Menu] ExpansionQuestModule not available.");
+			return true;
+		}
+
+		if (!questModule.HasCompletedQuest(dest.Expansion_Quest_ID, player.GetIdentity().GetId()))
+		{
+			errorMsg = "You must complete the required quest (ID: " + dest.Expansion_Quest_ID.ToString() + ") before teleporting here.";
+			return false;
+		}
+		#endif
+
+		return true;
 	}
 };
