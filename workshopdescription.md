@@ -89,4 +89,15 @@ If you already used the original version, you can keep using its existing [b].js
 
 Repacking is allowed if you leave a favorite and give the Workshop page a thumbs up.
 
+[hr][/hr]
+
+[h1]My Other Mods[/h1]
+────────────────────────────────────────
+
+[list]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3623510671]Psyerns Sound System[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3627848296]Psyerns Radio Show[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3689057982]Psyerns Teleport Overhaul[/url]
+[/list]
+
 [img]https://i.imgur.com/SGMylzO.gif[/img]
