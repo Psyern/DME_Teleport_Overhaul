@@ -175,9 +175,14 @@ class DME_TeleportPlayerMarker
 
         m_NameText = TextWidget.Cast(m_Root.FindAnyWidget("MarkerNameText"));
         if (m_NameText)
-            m_NameText.SetText(m_PlayerName);
+            m_NameText.SetText(GetMarkerLabel());
 
         m_Root.Show(false);
+    }
+
+    protected string GetMarkerLabel()
+    {
+        return string.Format(Widget.TranslateString("#STR_DME_TELEPORT_PLAYER_TELEPORTED"), m_PlayerName);
     }
 
     bool Matches(string playerName, vector worldPosition)
@@ -195,7 +200,7 @@ class DME_TeleportPlayerMarker
         m_ExpireTime = GetGame().GetTime() + durationMs;
 
         if (m_NameText)
-            m_NameText.SetText(m_PlayerName);
+            m_NameText.SetText(GetMarkerLabel());
     }
 
     bool Update()
