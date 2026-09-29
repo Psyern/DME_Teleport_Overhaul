@@ -1,4 +1,5 @@
-class DME_TeleportManager
+// Managed: PsyCore_RPC holds handler instances weakly (s_Instance keeps it alive)
+class DME_TeleportManager : Managed
 {
 	private static ref DME_TeleportManager s_Instance;
 	private ref DME_TeleportConfig m_Config;
@@ -12,17 +13,17 @@ class DME_TeleportManager
 		m_Cooldowns = new map<string, ref map<string, int>>;
 		m_LastRequestTime = new map<string, int>;
 
-		GetRPCManager().AddRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.TRAVEL_REQUEST, this, SingleplayerExecutionType.Server);
-		GetRPCManager().AddRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_REQUEST, this, SingleplayerExecutionType.Server);
+		PsyCore_RPC.Register(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.TRAVEL_REQUEST, this, DME_Teleport_RPC.TRAVEL_REQUEST, PsyCore_RpcFlags.SERVER);
+		PsyCore_RPC.Register(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_REQUEST, this, DME_Teleport_RPC.SYNC_REQUEST, PsyCore_RpcFlags.SERVER);
 
-		if (GetGame().IsServer())
+		if (g_Game.IsServer())
 		{
 			m_Config = DME_TeleportConfigLoader.Load();
 			m_ProhibitedZonesConfig = DME_ProhibitedZonesConfigLoader.Load();
 			m_GlobalMenuPreloadObjectTypes = DME_OverhaulJsonConfigManager.GetSerializedGlobalPreloadObjectTypes();
 		}
 
-		Print("[DME_Teleport_Menu] Manager initialized (server=" + GetGame().IsServer().ToString() + ").");
+		PsyCore_Log.Get("DME_Teleport_Menu").Info("Manager initialized (server=" + g_Game.IsServer().ToString() + ").");
 	}
 
 	static DME_TeleportManager GetInstance()
@@ -37,18 +38,18 @@ class DME_TeleportManager
 		s_Instance = null;
 	}
 
-	void RPC_TravelRequest(CallType type, ParamsReadContext ctx, PlayerIdentity sender, Object target)
+	void RPC_TravelRequest(ParamsReadContext ctx, PlayerIdentity sender, Object target)
 	{
-		if (type != CallType.Server || !sender)
+		if (!sender)
 			return;
 
-		Param1<string> data = new Param1<string>("");
-		if (!ctx.Read(data))
+		Param1<string> data;
+		if (!ctx.Read(data) || !data)
 			return;
 
 		string destName = data.param1;
 		string uid = sender.GetId();
-		int nowMS = GetGame().GetTime();
+		int nowMS = g_Game.GetTime();
 
 		if (m_LastRequestTime.Contains(uid))
 		{
@@ -94,7 +95,7 @@ class DME_TeleportManager
 			return;
 		}
 
-		int currentTime = CF_Date.Now(true).GetTimestamp();
+		int currentTime = PsyCore_Time.NowUnix();
 		int nextAvailable = GetCooldown(uid, dest.TeleportName);
 		if (currentTime < nextAvailable)
 		{
@@ -123,17 +124,19 @@ class DME_TeleportManager
 
 		vector pos = dest.GetPosition();
 		if (pos[1] == 0)
-			pos[1] = GetGame().SurfaceY(pos[0], pos[2]);
+			pos[1] = g_Game.SurfaceY(pos[0], pos[2]);
 
 		vector safePos = DME_OverhaulTeleportHelper.GetSafeTeleportPosition(pos, true);
 		BroadcastTeleportPortalEffect(markerPosition, DME_Teleport_Overhaul.GUI_TELEPORT_PARTICLE_DURATION_MS, DME_Teleport_Overhaul.GUI_TELEPORT_SOUND_SET);
-		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(ExecuteDelayedGUITeleport, DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS, false, sender, player, safePos, dest.TeleportName, dest.Marker, markerPosition);
+		g_Game.GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(ExecuteDelayedGUITeleport, DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS, false, sender, player, safePos, dest.TeleportName, dest.Marker, markerPosition);
 
 		int updatedRep = GetPlayerEconomyValue(player);
-		Print("[DME_Teleport_Menu] Scheduled GUI teleport for " + sender.GetName() + " (" + uid + ") to " + destName + " at " + safePos.ToString() + " after " + DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS.ToString() + "ms.");
+		PsyCore_Log.Get("DME_Teleport_Menu").Info("Scheduled GUI teleport for " + sender.GetName() + " (" + uid + ") to " + destName + " at " + safePos.ToString() + " after " + DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS.ToString() + "ms.");
 		SendTravelResult(sender, true, "Teleporting to " + destName + "...", updatedRep, destName, newNextAvailable);
 	}
 
+	// Loading screen / portal effect / marker stay on the CF channel DME_Teleport_Overhaul.RPC_NAMESPACE:
+	// that namespace is shared with the third-party action teleport (actionteleportplayer.c), one client receiver.
 	private void ExecuteDelayedGUITeleport(PlayerIdentity identity, PlayerBase player, vector safePos, string destName, int shouldBroadcastMarker, vector markerPosition)
 	{
 		if (!player || !identity)
@@ -142,7 +145,7 @@ class DME_TeleportManager
 		DME_OverhaulTeleportHelper.BeginTeleportTransition(player, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS);
 		GetRPCManager().SendRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, new Param2<int, string>(DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, m_GlobalMenuPreloadObjectTypes), true, identity);
 		DME_OverhaulTeleportHelper.TeleportPlayerWithSafety(player, safePos, destName, 0, true);
-		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(BroadcastTeleportPortalEffect, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS - DME_Teleport_Overhaul.TELEPORT_ARRIVAL_EFFECT_LEAD_MS, false, safePos, DME_Teleport_Overhaul.TELEPORT_ARRIVAL_EFFECT_DURATION_MS, DME_Teleport_Overhaul.GUI_TELEPORT_OUT_SOUND_SET);
+		g_Game.GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(BroadcastTeleportPortalEffect, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS - DME_Teleport_Overhaul.TELEPORT_ARRIVAL_EFFECT_LEAD_MS, false, safePos, DME_Teleport_Overhaul.TELEPORT_ARRIVAL_EFFECT_DURATION_MS, DME_Teleport_Overhaul.GUI_TELEPORT_OUT_SOUND_SET);
 
 		if (shouldBroadcastMarker == 1 && identity.GetName() != string.Empty)
 			BroadcastGUITeleportMarker(identity.GetName(), markerPosition);
@@ -161,9 +164,9 @@ class DME_TeleportManager
 		GetRPCManager().SendRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_MARKER, new Param3<string, vector, int>(playerName, worldPosition, DME_Teleport_Overhaul.GUI_TELEPORT_MARKER_DURATION_MS), true);
 	}
 
-	void RPC_SyncRequest(CallType type, ParamsReadContext ctx, PlayerIdentity sender, Object target)
+	void RPC_SyncRequest(ParamsReadContext ctx, PlayerIdentity sender, Object target)
 	{
-		if (type != CallType.Server || !sender)
+		if (!sender)
 			return;
 		RequestSyncState(sender);
 	}
@@ -179,7 +182,7 @@ class DME_TeleportManager
 		if (player)
 			reputation = GetPlayerEconomyValue(player);
 
-		int currentTime = CF_Date.Now(true).GetTimestamp();
+		int currentTime = PsyCore_Time.NowUnix();
 		string serialized = "";
 		for (int i = 0; i < m_Config.Destinations.Count(); i++)
 		{
@@ -195,7 +198,7 @@ class DME_TeleportManager
 			serialized += dest.TeleportName + "|" + dest.Cost.ToString() + "|" + dest.CooldownSec.ToString() + "|" + remainingSecs.ToString() + "|" + dest.Picture.ToString();
 		}
 
-		GetRPCManager().SendRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_STATE, new Param4<int, int, string, string>(reputation, m_Config.EconomyMode, serialized, GetEconomyDisplayName()), true, identity);
+		PsyCore_RPC.SendParam(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_STATE, new Param4<int, int, string, string>(reputation, m_Config.EconomyMode, serialized, GetEconomyDisplayName()), true, identity);
 	}
 
 	private void SendTravelResult(PlayerIdentity identity, bool success, string message, int updatedRep, string destName, int nextAvailableTime)
@@ -204,7 +207,7 @@ class DME_TeleportManager
 		if (success)
 			successInt = 1;
 
-		GetRPCManager().SendRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.TRAVEL_RESULT, new Param5<int, string, int, string, int>(successInt, message, updatedRep, destName, nextAvailableTime), true, identity);
+		PsyCore_RPC.SendParam(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.TRAVEL_RESULT, new Param5<int, string, int, string, int>(successInt, message, updatedRep, destName, nextAvailableTime), true, identity);
 	}
 
 	private bool ValidatePlayerState(PlayerBase player, out string errorMsg)
@@ -250,7 +253,7 @@ class DME_TeleportManager
 
 		vector destinationPosition = dest.GetPosition();
 		if (destinationPosition[1] == 0)
-			destinationPosition[1] = GetGame().SurfaceY(destinationPosition[0], destinationPosition[2]);
+			destinationPosition[1] = g_Game.SurfaceY(destinationPosition[0], destinationPosition[2]);
 
 		if (IsPositionInsideProhibitedZone(destinationPosition, true, errorMsg))
 			return true;
@@ -287,47 +290,13 @@ class DME_TeleportManager
 			return false;
 
 		if (zone.HasValidPolygon())
-			return IsInsidePolygonZone(position, zone.GetPolygonPositions());
+			return PsyCore_Geo.InPolygon(position, zone.GetPolygonPositions());
 
 		if (zone.Radius <= 0)
 			return false;
 
-		vector poi = zone.GetPOIPosition();
-		vector flatPosition = Vector(position[0], 0, position[2]);
-		vector flatPoi = Vector(poi[0], 0, poi[2]);
-		return vector.Distance(flatPosition, flatPoi) <= zone.Radius;
-	}
-
-	private bool IsInsidePolygonZone(vector position, array<vector> polygonPoints)
-	{
-		if (!polygonPoints || polygonPoints.Count() < 3)
-			return false;
-
-		bool inside;
-		float px = position[0];
-		float pz = position[2];
-		int pointCount = polygonPoints.Count();
-
-		for (int pointIndex = 0, previousIndex = pointCount - 1; pointIndex < pointCount; previousIndex = pointIndex++)
-		{
-			vector currentPoint = polygonPoints[pointIndex];
-			vector previousPoint = polygonPoints[previousIndex];
-			float currentX = currentPoint[0];
-			float currentZ = currentPoint[2];
-			float previousX = previousPoint[0];
-			float previousZ = previousPoint[2];
-
-			bool intersects = ((currentZ > pz) != (previousZ > pz));
-			if (!intersects)
-				continue;
-
-			float slope = (previousX - currentX) / (previousZ - currentZ);
-			float intersectX = currentX + slope * (pz - currentZ);
-			if (px < intersectX)
-				inside = !inside;
-		}
-
-		return inside;
+		// 2D distance on x/z, same as before
+		return PsyCore_Geo.InCircle(position, zone.GetPOIPosition(), zone.Radius);
 	}
 
 	private string GetZoneWarningMessage(DME_ProhibitedTeleportZone zone, bool isDestination)
@@ -525,7 +494,7 @@ class DME_TeleportManager
 				if (itemAmount <= remaining)
 				{
 					remaining = remaining - itemAmount;
-					GetGame().ObjectDelete(item);
+					g_Game.ObjectDelete(item);
 				}
 				else
 				{
@@ -536,7 +505,7 @@ class DME_TeleportManager
 			else
 			{
 				remaining = remaining - 1;
-				GetGame().ObjectDelete(item);
+				g_Game.ObjectDelete(item);
 			}
 		}
 
@@ -571,7 +540,7 @@ class DME_TeleportManager
 		ExpansionQuestModule questModule = ExpansionQuestModule.GetModuleInstance();
 		if (!questModule)
 		{
-			Print("[DME_Teleport_Menu] ExpansionQuestModule not available.");
+			PsyCore_Log.Get("DME_Teleport_Menu").Warn("ExpansionQuestModule not available.");
 			return true;
 		}
 

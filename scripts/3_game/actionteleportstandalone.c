@@ -25,16 +25,14 @@ class DME_Teleport_Overhaul
 
     static void EnsureDirectories()
     {
-        ref array<string> directories = { "$profile:DeadmansEcho", ROOT_DIRECTORY, LOG_DIRECTORY };
+        // $profile:DeadmansEcho -> ROOT_DIRECTORY -> LOG_DIRECTORY (every missing level is created)
+        if (FileExist(LOG_DIRECTORY))
+            return;
 
-        foreach (string directory : directories)
-        {
-            if (!FileExist(directory))
-            {
-                MakeDirectory(directory);
-                Print("[DME_Teleport_Overhaul] Created folder: " + directory);
-            }
-        }
+        if (PsyCore_Paths.EnsureDir(LOG_DIRECTORY))
+            PsyCore_Log.Get("DME_Teleport_Overhaul").Info("Created folder: " + LOG_DIRECTORY);
+        else
+            PsyCore_Log.Get("DME_Teleport_Overhaul").Error("Could not create folder: " + LOG_DIRECTORY);
     }
 
     static string SerializePreloadObjectTypes(array<string> preloadObjectTypes)
@@ -61,7 +59,8 @@ class DME_Teleport_Overhaul
 
 class DME_Teleport_Constants
 {
-    static const int DME_TELEPORT_MENU = 35002;
+    // was 35002 (collided with DME_Custom_Events); first id of the reserved PsyCore block
+    static const int DME_TELEPORT_MENU = PsyCore_Ids.MENU_DME_TELEPORT;
     static const int ECONOMY_MODE_NONE = 0;
     static const int ECONOMY_MODE_HARDLINE_MIN_REP = 1;
     static const int ECONOMY_MODE_HARDLINE_COST = 2;

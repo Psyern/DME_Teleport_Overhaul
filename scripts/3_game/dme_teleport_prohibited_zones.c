@@ -26,9 +26,9 @@ class DME_ProhibitedTeleportZone
 		return PolygonZoneEnable && PolygonVectors && PolygonVectors.Count() >= 3;
 	}
 
-	ref array<vector> GetPolygonPositions()
+	array<vector> GetPolygonPositions()
 	{
-		ref array<vector> positions = new array<vector>;
+		array<vector> positions = new array<vector>;
 
 		if (!PolygonVectors)
 			return positions;
@@ -46,7 +46,7 @@ class DME_ProhibitedTeleportZone
 	}
 };
 
-class DME_ProhibitedZonesConfig
+class DME_ProhibitedZonesConfig : PsyCore_ConfigBase
 {
 	int VersionID;
 	ref array<ref DME_ProhibitedTeleportZone> ProhibitedTeleportZones;
@@ -56,41 +56,89 @@ class DME_ProhibitedZonesConfig
 		VersionID = 1;
 		ProhibitedTeleportZones = new array<ref DME_ProhibitedTeleportZone>;
 	}
+
+	// PsyCore_ConfigBase: the version field keeps its existing JSON name "VersionID"
+	override int GetVersion()
+	{
+		return VersionID;
+	}
+
+	override void SetVersion(int version)
+	{
+		VersionID = version;
+	}
+
+	override int GetCurrentVersion()
+	{
+		return DME_ProhibitedZonesConfigLoader.CURRENT_VERSION_ID;
+	}
+
+	override void OnMigrate(int fromVersion)
+	{
+		DME_ProhibitedZonesConfigLoader.MarkChanged();
+	}
+
+	// Called after every load: repair + example zones for an empty list (unchanged logic)
+	override void OnValidate()
+	{
+		if (DME_ProhibitedZonesConfigLoader.Repair(this))
+			DME_ProhibitedZonesConfigLoader.MarkChanged();
+	}
 };
 
 class DME_ProhibitedZonesConfigLoader
 {
 	static const int CURRENT_VERSION_ID = 1;
+	// set by DME_ProhibitedZonesConfig.OnMigrate/OnValidate: the file is only rewritten when something changed
+	protected static bool s_DME_Changed;
 
-	static ref DME_ProhibitedZonesConfig Load()
+	static void MarkChanged()
+	{
+		s_DME_Changed = true;
+	}
+
+	static DME_ProhibitedZonesConfig Load()
 	{
 		string filePath = DME_Teleport_Constants.PROHIBITED_ZONES_FILE;
 		EnsureDirectories();
 
-		ref DME_ProhibitedZonesConfig config;
-		if (FileExist(filePath))
+		bool existed = FileExist(filePath);
+		s_DME_Changed = false;
+		DME_ProhibitedZonesConfig config;
+		// writeBack=false: existing files are only rewritten after a migration/repair (as before)
+		bool loaded = PsyCore_ConfigLoader<DME_ProhibitedZonesConfig>.Load(filePath, config, "", "DME_Teleport_Menu", false);
+		if (loaded)
 		{
-			config = new DME_ProhibitedZonesConfig();
-			JsonFileLoader<DME_ProhibitedZonesConfig>.JsonLoadFile(filePath, config);
-
-			if (!config)
-				config = new DME_ProhibitedZonesConfig();
-
-			bool migrated = Migrate(config);
-			if (EnsureExampleZones(config))
-				migrated = true;
-
-			if (migrated)
+			if (s_DME_Changed)
 				Save(config);
 
-			Print("[DME_Teleport_Menu] Prohibited zones loaded: " + config.ProhibitedTeleportZones.Count().ToString());
+			PsyCore_Log.Get("DME_Teleport_Menu").Info("Prohibited zones loaded: " + config.ProhibitedTeleportZones.Count().ToString());
 			return config;
 		}
 
-		config = CreateDefaults();
+		if (existed)
+		{
+			// a broken file is never overwritten: the admin must be able to fix it
+			PsyCore_Log.Get("DME_Teleport_Menu").Error("Prohibited zones " + filePath + " could not be read, using the example zones until it is fixed.");
+			return config;
+		}
+
 		Save(config);
-		Print("[DME_Teleport_Menu] Default prohibited zone config created.");
+		PsyCore_Log.Get("DME_Teleport_Menu").Info("Default prohibited zone config created.");
 		return config;
+	}
+
+	// Migrate + example zones; true when the config was changed
+	static bool Repair(DME_ProhibitedZonesConfig config)
+	{
+		if (!config)
+			return false;
+
+		bool changed = Migrate(config);
+		if (EnsureExampleZones(config))
+			changed = true;
+
+		return changed;
 	}
 
 	static void Save(DME_ProhibitedZonesConfig config)
@@ -104,9 +152,9 @@ class DME_ProhibitedZonesConfigLoader
 		DME_Teleport_Overhaul.EnsureDirectories();
 	}
 
-	static ref DME_ProhibitedZonesConfig CreateDefaults()
+	static DME_ProhibitedZonesConfig CreateDefaults()
 	{
-		ref DME_ProhibitedZonesConfig config = new DME_ProhibitedZonesConfig();
+		DME_ProhibitedZonesConfig config = new DME_ProhibitedZonesConfig();
 		config.VersionID = CURRENT_VERSION_ID;
 		EnsureExampleZones(config);
 		return config;
@@ -128,9 +176,9 @@ class DME_ProhibitedZonesConfigLoader
 		return true;
 	}
 
-	protected static ref DME_ProhibitedTeleportZone CreateExampleRadiusZone()
+	protected static DME_ProhibitedTeleportZone CreateExampleRadiusZone()
 	{
-		ref DME_ProhibitedTeleportZone zone = new DME_ProhibitedTeleportZone();
+		DME_ProhibitedTeleportZone zone = new DME_ProhibitedTeleportZone();
 		zone.POI = { 2731.57, 0.0, 1255.94 };
 		zone.Radius = 250;
 		zone.WarningMessage = "#STR_DME_TELEPORT_WARNING_RADIUS_EXAMPLE";
@@ -138,9 +186,9 @@ class DME_ProhibitedZonesConfigLoader
 		return zone;
 	}
 
-	protected static ref DME_ProhibitedTeleportZone CreateExamplePolygonZone()
+	protected static DME_ProhibitedTeleportZone CreateExamplePolygonZone()
 	{
-		ref DME_ProhibitedTeleportZone zone = new DME_ProhibitedTeleportZone();
+		DME_ProhibitedTeleportZone zone = new DME_ProhibitedTeleportZone();
 		zone.WarningMessage = "#STR_DME_TELEPORT_WARNING_POLYGON_EXAMPLE";
 		zone.PolygonZoneEnable = true;
 		zone.PolygonVectors.Insert({ 3616.18, 0.0, 2041.39 });

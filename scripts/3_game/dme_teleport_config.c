@@ -27,7 +27,7 @@ class DME_TeleportDestination
 	}
 };
 
-class DME_TeleportConfig
+class DME_TeleportConfig : PsyCore_ConfigBase
 {
 	int Version;
 	int RepMode;
@@ -49,140 +49,165 @@ class DME_TeleportConfig
 		CurrencyDisplayName = "#STR_DME_TELEPORT_BALANCE";
 		Destinations = new array<ref DME_TeleportDestination>;
 	}
+
+	// PsyCore_ConfigBase: the version field keeps its existing JSON name "Version"
+	override int GetVersion()
+	{
+		return Version;
+	}
+
+	override void SetVersion(int version)
+	{
+		Version = version;
+	}
+
+	override int GetCurrentVersion()
+	{
+		return 5;
+	}
+
+	// Called by PsyCore_ConfigLoader when Version < 5 (steps unchanged, run in order)
+	override void OnMigrate(int fromVersion)
+	{
+		if (Version < 2 && RepMode == 0)
+			RepMode = 1;
+
+		if (Version < 2)
+		{
+			if (Destinations)
+			{
+				for (int d = 0; d < Destinations.Count(); d++)
+				{
+					DME_TeleportDestination dest = Destinations[d];
+					if (dest && dest.Picture <= 0)
+						dest.Picture = 1;
+				}
+			}
+
+			Version = 2;
+		}
+
+		if (Version < 3)
+		{
+			if (Destinations)
+			{
+				for (int markerIndex = 0; markerIndex < Destinations.Count(); markerIndex++)
+				{
+					DME_TeleportDestination markerDestination = Destinations[markerIndex];
+					if (!markerDestination)
+						continue;
+
+					markerDestination.Marker = 1;
+				}
+			}
+
+			Version = 3;
+		}
+
+		if (Version < 4)
+		{
+			#ifdef EXPANSIONMODHARDLINE
+			if (RepMode == 0)
+				EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP;
+			else
+				EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST;
+			#else
+			EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_NONE;
+			#endif
+
+			if (CurrencyDisplayName == string.Empty)
+				CurrencyDisplayName = "#STR_DME_TELEPORT_BALANCE";
+
+			Version = 4;
+		}
+
+		if (Version < 5)
+		{
+			if (Destinations)
+			{
+				for (int questIndex = 0; questIndex < Destinations.Count(); questIndex++)
+				{
+					DME_TeleportDestination questDest = Destinations[questIndex];
+					if (!questDest)
+						continue;
+
+					questDest.Expansion_Quest_Enable = 0;
+					questDest.Expansion_Quest_ID = -1;
+				}
+			}
+
+			Version = 5;
+		}
+
+		DME_TeleportConfigLoader.MarkChanged();
+	}
+
+	// Called after every load
+	override void OnValidate()
+	{
+		if (CurrencyDisplayName == string.Empty)
+		{
+			CurrencyDisplayName = "#STR_DME_TELEPORT_BALANCE";
+			DME_TeleportConfigLoader.MarkChanged();
+		}
+
+		#ifndef EXPANSIONMODHARDLINE
+		if (EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP || EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST)
+		{
+			EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_NONE;
+			DME_TeleportConfigLoader.MarkChanged();
+			PsyCore_Log.Get("DME_Teleport_Menu").Warn("Hardline not detected. EconomyMode reset to NONE. Configure CurrencyClassName and EconomyMode=3 for item-based payment.");
+		}
+		#endif
+	}
 };
 
 class DME_TeleportConfigLoader
 {
-	static ref DME_TeleportConfig Load()
+	// set by DME_TeleportConfig.OnMigrate/OnValidate: the file is only rewritten when something changed
+	protected static bool s_DME_Changed;
+
+	static void MarkChanged()
+	{
+		s_DME_Changed = true;
+	}
+
+	static DME_TeleportConfig Load()
 	{
 		string file = DME_Teleport_Constants.CONFIG_FILE;
 		EnsureDirectories();
 
-		ref DME_TeleportConfig config;
-		if (FileExist(file))
+		bool existed = FileExist(file);
+		s_DME_Changed = false;
+		DME_TeleportConfig config;
+		// writeBack=false: existing files are only rewritten after a migration/repair (as before)
+		bool loaded = PsyCore_ConfigLoader<DME_TeleportConfig>.Load(file, config, "", "DME_Teleport_Menu", false);
+		if (loaded && config.Destinations && config.Destinations.Count() > 0)
 		{
-			config = new DME_TeleportConfig();
-			JsonFileLoader<DME_TeleportConfig>.JsonLoadFile(file, config);
+			if (s_DME_Changed)
+				Save(config);
 
-			bool migrated;
-			if (config && config.Version < 2 && config.RepMode == 0)
-			{
-				config.RepMode = 1;
-				migrated = true;
-			}
-
-			if (config && config.Version < 2)
-			{
-				if (config.Destinations)
-				{
-					for (int d = 0; d < config.Destinations.Count(); d++)
-					{
-						DME_TeleportDestination dest = config.Destinations[d];
-						if (dest && dest.Picture <= 0)
-						{
-							dest.Picture = 1;
-							migrated = true;
-						}
-					}
-				}
-
-				config.Version = 2;
-				migrated = true;
-			}
-
-			if (config && config.Version < 3)
-			{
-				if (config.Destinations)
-				{
-					for (int markerIndex = 0; markerIndex < config.Destinations.Count(); markerIndex++)
-					{
-						DME_TeleportDestination markerDestination = config.Destinations[markerIndex];
-						if (!markerDestination)
-							continue;
-
-						markerDestination.Marker = 1;
-					}
-				}
-
-				config.Version = 3;
-				migrated = true;
-			}
-
-			if (config && config.Version < 4)
-			{
-				#ifdef EXPANSIONMODHARDLINE
-				if (config.RepMode == 0)
-					config.EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP;
-				else
-					config.EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST;
-				#else
-				config.EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_NONE;
-				#endif
-
-				if (config.CurrencyDisplayName == string.Empty)
-					config.CurrencyDisplayName = "#STR_DME_TELEPORT_BALANCE";
-
-				config.Version = 4;
-				migrated = true;
-			}
-
-			if (config && config.Version < 5)
-			{
-				if (config.Destinations)
-				{
-					for (int questIndex = 0; questIndex < config.Destinations.Count(); questIndex++)
-					{
-						DME_TeleportDestination questDest = config.Destinations[questIndex];
-						if (!questDest)
-							continue;
-
-						questDest.Expansion_Quest_Enable = 0;
-						questDest.Expansion_Quest_ID = -1;
-					}
-				}
-
-				config.Version = 5;
-				migrated = true;
-			}
-
-			if (config)
-			{
-				if (config.CurrencyDisplayName == string.Empty)
-				{
-					config.CurrencyDisplayName = "#STR_DME_TELEPORT_BALANCE";
-					migrated = true;
-				}
-
-				#ifndef EXPANSIONMODHARDLINE
-				if (config.EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_MIN_REP || config.EconomyMode == DME_Teleport_Constants.ECONOMY_MODE_HARDLINE_COST)
-				{
-					config.EconomyMode = DME_Teleport_Constants.ECONOMY_MODE_NONE;
-					migrated = true;
-					Print("[DME_Teleport_Menu] Hardline not detected. EconomyMode reset to NONE. Configure CurrencyClassName and EconomyMode=3 for item-based payment.");
-				}
-				#endif
-			}
-
-			if (config && config.Destinations && config.Destinations.Count() > 0)
-			{
-				if (migrated)
-					Save(config);
-
-				Print("[DME_Teleport_Menu] Config loaded with " + config.Destinations.Count().ToString() + " destinations.");
-				return config;
-			}
+			PsyCore_Log.Get("DME_Teleport_Menu").Info("Config loaded with " + config.Destinations.Count().ToString() + " destinations.");
+			return config;
 		}
 
 		config = CreateDefaults();
+		if (existed && !loaded)
+		{
+			// a broken file is never overwritten: the admin must be able to fix it
+			PsyCore_Log.Get("DME_Teleport_Menu").Error("Config " + file + " could not be read, using default destinations until it is fixed.");
+			return config;
+		}
+
 		Save(config);
-		Print("[DME_Teleport_Menu] Default config created and saved.");
+		PsyCore_Log.Get("DME_Teleport_Menu").Info("Default config created and saved.");
 		return config;
 	}
 
 	static void Save(DME_TeleportConfig config)
 	{
 		EnsureDirectories();
-		JsonFileLoader<DME_TeleportConfig>.JsonSaveFile(DME_Teleport_Constants.CONFIG_FILE, config);
+		PsyCore_ConfigLoader<DME_TeleportConfig>.Save(DME_Teleport_Constants.CONFIG_FILE, config, "DME_Teleport_Menu");
 	}
 
 	static void EnsureDirectories()
@@ -190,9 +215,9 @@ class DME_TeleportConfigLoader
 		DME_Teleport_Overhaul.EnsureDirectories();
 	}
 
-	static ref DME_TeleportConfig CreateDefaults()
+	static DME_TeleportConfig CreateDefaults()
 	{
-		ref DME_TeleportConfig config = new DME_TeleportConfig();
+		DME_TeleportConfig config = new DME_TeleportConfig();
 		config.Version = 5;
 		config.RepMode = 1;
 		#ifdef EXPANSIONMODHARDLINE
@@ -203,7 +228,7 @@ class DME_TeleportConfigLoader
 		config.CurrencyClassName = string.Empty;
 		config.CurrencyDisplayName = "#STR_DME_TELEPORT_BALANCE";
 
-		ref DME_TeleportDestination greenMtn = new DME_TeleportDestination();
+		DME_TeleportDestination greenMtn = new DME_TeleportDestination();
 		greenMtn.TeleportName = "Green Mountain";
 		greenMtn.TeleportPos = { 3700.51, 0.0, 5981.27 };
 		greenMtn.Cost = 1200;
@@ -211,7 +236,7 @@ class DME_TeleportConfigLoader
 		greenMtn.Picture = 1;
 		greenMtn.Marker = 1;
 
-		ref DME_TeleportDestination krasno = new DME_TeleportDestination();
+		DME_TeleportDestination krasno = new DME_TeleportDestination();
 		krasno.TeleportName = "Krasno Airfield";
 		krasno.TeleportPos = { 11880.40, 0.0, 12460.74 };
 		krasno.Cost = 1800;

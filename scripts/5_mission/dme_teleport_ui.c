@@ -24,7 +24,7 @@ class DME_TeleportDestRow
 		if (RemainingSeconds <= 0)
 			return 0;
 
-		float elapsed = GetGame().GetTickTime() - ClientTimestamp;
+		float elapsed = g_Game.GetTickTime() - ClientTimestamp;
 		int remaining = RemainingSeconds - (int) elapsed;
 		if (remaining < 0)
 			remaining = 0;
@@ -58,8 +58,9 @@ class DME_TeleportMenu extends UIScriptedMenu
 		m_UpdateTimer = 0;
 		m_EconomyLabelText = "#STR_DME_TELEPORT_REPUTATION";
 
-		GetRPCManager().AddRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_STATE, this, SingleplayerExecutionType.Client);
-		GetRPCManager().AddRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.TRAVEL_RESULT, this, SingleplayerExecutionType.Client);
+		// UIScriptedMenu is Managed; the menu instance is kept alive by MissionGameplay.m_DMETeleportMenu
+		PsyCore_RPC.Register(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_STATE, this, DME_Teleport_RPC.SYNC_STATE, PsyCore_RpcFlags.CLIENT);
+		PsyCore_RPC.Register(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.TRAVEL_RESULT, this, DME_Teleport_RPC.TRAVEL_RESULT, PsyCore_RpcFlags.CLIENT);
 	}
 
 	void ~DME_TeleportMenu()
@@ -77,7 +78,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 
 	override Widget Init()
 	{
-		layoutRoot = GetGame().GetWorkspace().CreateWidgets(LAYOUT_PATH);
+		layoutRoot = g_Game.GetWorkspace().CreateWidgets(LAYOUT_PATH);
 		if (layoutRoot)
 		{
 			m_RootFrame = layoutRoot;
@@ -105,9 +106,9 @@ class DME_TeleportMenu extends UIScriptedMenu
 	{
 		super.OnShow();
 		SetFocus(layoutRoot);
-		GetGame().GetInput().ChangeGameFocus(1);
-		GetGame().GetUIManager().ShowUICursor(true);
-		GetRPCManager().SendRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_REQUEST, null, true);
+		g_Game.GetInput().ChangeGameFocus(1);
+		g_Game.GetUIManager().ShowUICursor(true);
+		PsyCore_RPC.SendEmpty(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_REQUEST, true);
 
 		if (m_StatusText)
 			m_StatusText.SetText(TranslateText("#STR_DME_TELEPORT_REQUESTING_DATA"));
@@ -116,8 +117,8 @@ class DME_TeleportMenu extends UIScriptedMenu
 	override void OnHide()
 	{
 		super.OnHide();
-		GetGame().GetInput().ChangeGameFocus(-1);
-		GetGame().GetUIManager().ShowUICursor(false);
+		g_Game.GetInput().ChangeGameFocus(-1);
+		g_Game.GetUIManager().ShowUICursor(false);
 	}
 
 	override bool OnClick(Widget w, int x, int y, int button)
@@ -163,13 +164,10 @@ class DME_TeleportMenu extends UIScriptedMenu
 		}
 	}
 
-	void RPC_SyncState(CallType type, ParamsReadContext ctx, PlayerIdentity sender, Object target)
+	void RPC_SyncState(ParamsReadContext ctx, PlayerIdentity sender, Object target)
 	{
-		if (type != CallType.Client)
-			return;
-
-		Param4<int, int, string, string> data = new Param4<int, int, string, string>(0, 1, "", "#STR_DME_TELEPORT_REPUTATION");
-		if (!ctx.Read(data))
+		Param4<int, int, string, string> data;
+		if (!ctx.Read(data) || !data)
 			return;
 
 		m_PlayerReputation = data.param1;
@@ -198,7 +196,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 
 		TStringArray entries = new TStringArray;
 		serialized.Split(";", entries);
-		float nowTick = GetGame().GetTickTime();
+		float nowTick = g_Game.GetTickTime();
 
 		for (int i = 0; i < entries.Count(); i++)
 		{
@@ -231,13 +229,10 @@ class DME_TeleportMenu extends UIScriptedMenu
 		UpdateCooldownDisplays();
 	}
 
-	void RPC_TravelResult(CallType type, ParamsReadContext ctx, PlayerIdentity sender, Object target)
+	void RPC_TravelResult(ParamsReadContext ctx, PlayerIdentity sender, Object target)
 	{
-		if (type != CallType.Client)
-			return;
-
-		Param5<int, string, int, string, int> data = new Param5<int, string, int, string, int>(0, "", 0, "", 0);
-		if (!ctx.Read(data))
+		Param5<int, string, int, string, int> data;
+		if (!ctx.Read(data) || !data)
 			return;
 
 		bool success = data.param1 == 1;
@@ -253,7 +248,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 
 		if (success)
 		{
-			float nowTick = GetGame().GetTickTime();
+			float nowTick = g_Game.GetTickTime();
 			for (int i = 0; i < m_Rows.Count(); i++)
 			{
 				DME_TeleportDestRow row = m_Rows[i];
@@ -279,7 +274,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 		if (!m_DestinationList)
 			return;
 
-		Widget rowWidget = GetGame().GetWorkspace().CreateWidgets(ROW_LAYOUT_PATH, m_DestinationList);
+		Widget rowWidget = g_Game.GetWorkspace().CreateWidgets(ROW_LAYOUT_PATH, m_DestinationList);
 		if (!rowWidget)
 			return;
 
@@ -358,7 +353,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 		if (m_StatusText)
 			m_StatusText.SetText(string.Format(TranslateText("#STR_DME_TELEPORT_TRAVELING_TO"), destinationName));
 
-		GetRPCManager().SendRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.TRAVEL_REQUEST, new Param1<string>(destinationName), true);
+		PsyCore_RPC.SendParam(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.TRAVEL_REQUEST, new Param1<string>(destinationName), true);
 	}
 
 	override int GetID()

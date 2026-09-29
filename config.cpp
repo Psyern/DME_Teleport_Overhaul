@@ -10,7 +10,8 @@ class CfgPatches
 			"DZ_Data",
 			"DZ_scripts",
 			"DZ_Sounds_Effects",
-			"JM_CF_Scripts"
+			"JM_CF_Scripts",
+			"Psyerns_Core_Module"
 		};
 	};
 };
