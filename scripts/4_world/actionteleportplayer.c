@@ -7,7 +7,7 @@ static bool IsTeleportOnCooldown(string teleportName, int cooldownTime) {
         return false;
     }
 
-    float currentTime = GetGame().GetTime() / 1000; // Текущее время в секундах
+    float currentTime = g_Game.GetTime() / 1000; // Текущее время в секундах
     if (g_teleportCooldowns.Contains(teleportName)) {
         float lastUsed = g_teleportCooldowns.Get(teleportName);
         if ((currentTime - lastUsed) < cooldownTime) {
@@ -19,7 +19,7 @@ static bool IsTeleportOnCooldown(string teleportName, int cooldownTime) {
 
 static void SetTeleportCooldown(string teleportName, int cooldownTime) {
     if (cooldownTime > 0) { // Устанавливаем кулдаун только если он больше 0
-        float currentTime = GetGame().GetTime() / 1000; // Текущее время в секундах
+        float currentTime = g_Game.GetTime() / 1000; // Текущее время в секундах
         g_teleportCooldowns.Set(teleportName, currentTime);
     }
 }
@@ -146,7 +146,7 @@ class DME_Teleport_OverhaulAction: ActionContinuousBase
                                     // Если время активации телепорта больше 0, мы продолжаем
                                     if (entry.TeleportActiveTimeSeconds > 0) {
                                         InsertActivatedActionTeleport(entry.TeleportName);
-                                        GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(RemoveActivatedActionTeleport, entry.TeleportActiveTimeSeconds * 1000, false, entry.TeleportName);    
+                                        g_Game.GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(RemoveActivatedActionTeleport, entry.TeleportActiveTimeSeconds * 1000, false, entry.TeleportName);    
                                     }
                                 } else {
                                     Print("Item is already ruined, no further damage required.");
@@ -187,8 +187,9 @@ class DME_Teleport_OverhaulAction: ActionContinuousBase
 
                     vector startPosition = targetObject.GetPosition();
 
-                    string logMessage = string.Format("[Teleport] Player: %1 (GUID: %2) teleported from %3 (%4) to %5",
-                        playerName, steamID, startPosition.ToString(), teleportName, randomTeleportPosition.ToString());
+                    string startPositionText = startPosition.ToString();
+                    string targetPositionText = randomTeleportPosition.ToString();
+                    string logMessage = string.Format("[Teleport] Player: %1 (GUID: %2) teleported from %3 (%4) to %5", playerName, steamID, startPositionText, teleportName, targetPositionText);
 
                     Print(logMessage);  // Логирование в консоль
 
@@ -208,7 +209,7 @@ class DME_Teleport_OverhaulAction: ActionContinuousBase
                         GetRPCManager().SendRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, new Param2<int, string>(DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, preloadObjectTypes), true, player.GetIdentity());
                     }
 
-                    GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(TeleportHelper.TeleportPlayerWithSafety, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, player, randomTeleportPosition, entry.TeleportName, entry.TeleportCooldownSeconds, entry.UseSurfaceSafety);
+                    g_Game.GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(TeleportHelper.TeleportPlayerWithSafety, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, false, player, randomTeleportPosition, entry.TeleportName, entry.TeleportCooldownSeconds, entry.UseSurfaceSafety);
                 } else {
                     // Уведомление о нехватке предмета
                     player.MessageStatus(entry.MissingItemMessage);
@@ -218,7 +219,7 @@ class DME_Teleport_OverhaulAction: ActionContinuousBase
     }
 
     LO_TeleportEntry GetTeleportEntry(Object targetObject) {
-        foreach (ref LO_TeleportEntry entry : m_TeleportConfig.TeleportEntries)
+        foreach (LO_TeleportEntry entry : m_TeleportConfig.TeleportEntries)
         {
             if (vector.Distance(targetObject.GetPosition(), entry.ObjectCoordinates) < 3) {
                 return entry;
@@ -295,7 +296,7 @@ class DME_Teleport_OverhaulPoint extends ItemBase
         return false;
     }
 
-    override bool CanPutIntoHands( EntityAI player )
+    override bool CanPutIntoHands( EntityAI parent )
     {
         if( !super.CanPutIntoHands( parent ) )
         {

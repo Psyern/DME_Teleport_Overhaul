@@ -29,7 +29,7 @@ class DME_TeleportLoadingScreen
         if (m_Root)
             return;
 
-        m_Root = GetGame().GetWorkspace().CreateWidgets("DME_Teleport_Overhaul/gui/layouts/teleport_loading_screen.layout");
+        m_Root = g_Game.GetWorkspace().CreateWidgets("DME_Teleport_Overhaul/gui/layouts/teleport_loading_screen.layout");
         if (!m_Root)
             return;
 
@@ -57,7 +57,7 @@ class DME_TeleportLoadingScreen
             m_Background.SetImage(0);
         }
 
-        m_StartTime = GetGame().GetTime();
+        m_StartTime = g_Game.GetTime();
         m_EndTime = m_StartTime + safeDuration;
         m_FadeStartTime = m_EndTime - FADE_DURATION_MS;
         m_IsVisible = true;
@@ -69,11 +69,11 @@ class DME_TeleportLoadingScreen
         m_Root.SetAlpha(1.0);
         m_Root.Show(true);
 
-        if (GetGame().GetMission() && GetGame().GetMission().GetHud())
-            GetGame().GetMission().GetHud().Show(false);
+        if (g_Game.GetMission() && g_Game.GetMission().GetHud())
+            g_Game.GetMission().GetHud().Show(false);
 
-        if (GetGame().GetSoundScene())
-            GetGame().GetSoundScene().SetSoundVolume(0, 0);
+        if (g_Game.GetSoundScene())
+            g_Game.GetSoundScene().SetSoundVolume(0, 0);
     }
 
     void Update()
@@ -81,7 +81,7 @@ class DME_TeleportLoadingScreen
         if (!m_IsVisible || !m_Root)
             return;
 
-        int currentTime = GetGame().GetTime();
+        int currentTime = g_Game.GetTime();
         float progress = Math.InverseLerp(m_StartTime, m_EndTime, currentTime) * 100.0;
         progress = Math.Clamp(progress, 0.0, 100.0);
 
@@ -115,14 +115,14 @@ class DME_TeleportLoadingScreen
         m_Root.SetAlpha(1.0);
         m_Root.Show(false);
 
-        if (GetGame().GetMission() && GetGame().GetMission().GetHud())
-            GetGame().GetMission().GetHud().Show(true);
+        if (g_Game.GetMission() && g_Game.GetMission().GetHud())
+            g_Game.GetMission().GetHud().Show(true);
     }
 
     protected void RestoreSound()
     {
-        if (GetGame().GetSoundScene())
-            GetGame().GetSoundScene().SetSoundVolume(g_Game.m_volume_sound, 1);
+        if (g_Game.GetSoundScene())
+            g_Game.GetSoundScene().SetSoundVolume(g_Game.m_volume_sound, 1);
     }
 
     protected void PreloadObjects(string preloadObjectTypes, int durationMs)
@@ -154,7 +154,7 @@ modded class MissionGameplay
         if (!m_DME_TeleportLoadingScreen)
             m_DME_TeleportLoadingScreen = new DME_TeleportLoadingScreen();
 
-        GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, this, SingeplayerExecutionType.Client);
+        GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, this, SingleplayerExecutionType.Client);
     }
 
     override void OnUpdate(float timeslice)

@@ -13,7 +13,7 @@ class DME_Teleport_Overhaul
 
     static void EnsureDirectories()
     {
-        ref array<string> directories = { ROOT_DIRECTORY, LOG_DIRECTORY };
+        array<string> directories = { ROOT_DIRECTORY, LOG_DIRECTORY };
 
         foreach (string directory : directories)
         {

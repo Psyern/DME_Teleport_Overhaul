@@ -87,12 +87,12 @@ class JsonConfigManager
         if (!teleportConfig || !preloadConfig)
             return;
 
-        foreach (ref LO_TeleportEntry teleportEntry : teleportConfig.TeleportEntries)
+        foreach (LO_TeleportEntry teleportEntry : teleportConfig.TeleportEntries)
         {
             if (!teleportEntry)
                 continue;
 
-            foreach (ref LO_TeleportPreloadEntry preloadEntry : preloadConfig.TeleportPreloads)
+            foreach (LO_TeleportPreloadEntry preloadEntry : preloadConfig.TeleportPreloads)
             {
                 if (!preloadEntry || preloadEntry.TeleportName != teleportEntry.TeleportName)
                     continue;
@@ -198,7 +198,7 @@ class JsonConfigManager
 
     static void SpawnTeleportPoints() {
         LO_TeleportConfig m_TeleportConfig = LoadTeleportConfig();
-        foreach (ref LO_TeleportEntry entry : m_TeleportConfig.TeleportEntries)
+        foreach (LO_TeleportEntry entry : m_TeleportConfig.TeleportEntries)
         {
             if (entry.EnableTeleport)
             {

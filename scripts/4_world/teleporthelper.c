@@ -4,8 +4,8 @@ class TeleportHelper
     static void CreateTeleportInteractionObject(string objectType, vector objectCoordinates, vector objectOrientation)
     {
         // Создаем видимый объект
-        Object obj = GetGame().CreateObjectEx(objectType, objectCoordinates, ECE_NOSURFACEALIGN);
-        // Object obj = GetGame().CreateObject(objectType, vector.Zero);
+        Object obj = g_Game.CreateObjectEx(objectType, objectCoordinates, ECE_NOSURFACEALIGN);
+        // Object obj = g_Game.CreateObject(objectType, vector.Zero);
         if (obj)
         {
             // Применяем ориентацию к объекту
@@ -13,7 +13,8 @@ class TeleportHelper
             Print("Object " + objectType + " created at position: " + objectCoordinates.ToString());
 
             // Спавним невидимый объект для взаимодействия
-            DME_Teleport_OverhaulPoint interactionObj = GetGame().CreateObjectEx("DME_Teleport_OverhaulPoint", objectCoordinates, ECE_NOSURFACEALIGN, RF_IGNORE);
+            Object interactionRaw = g_Game.CreateObjectEx("DME_Teleport_OverhaulPoint", objectCoordinates, ECE_NOSURFACEALIGN, RF_IGNORE);
+            DME_Teleport_OverhaulPoint interactionObj = DME_Teleport_OverhaulPoint.Cast(interactionRaw);
             if (interactionObj)
             {
                 // ActionInteractBase action = new DME_Teleport_OverhaulAction();
@@ -61,7 +62,7 @@ class TeleportHelper
         TeleportPlayerDelayed(player, safePosition, teleportName, cooldownTime);
 
         if (useSurfaceSafety)
-            GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(EnsurePlayerAboveGround, DME_Teleport_Overhaul.TELEPORT_POSITION_RECHECK_DELAY_MS, false, player, safePosition);
+            g_Game.GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(EnsurePlayerAboveGround, DME_Teleport_Overhaul.TELEPORT_POSITION_RECHECK_DELAY_MS, false, player, safePosition);
     }
 
     static void EnsurePlayerAboveGround(PlayerBase player, vector expectedPosition)
