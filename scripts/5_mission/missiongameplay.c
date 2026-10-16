@@ -30,7 +30,7 @@ class DME_TeleportLoadingScreen
         if (m_Root)
             return;
 
-        m_Root = GetGame().GetWorkspace().CreateWidgets("DME_Teleport_Overhaul/gui/layouts/teleport_loading_screen.layout");
+        m_Root = g_Game.GetWorkspace().CreateWidgets("DME_Teleport_Overhaul/gui/layouts/teleport_loading_screen.layout");
         if (!m_Root)
             return;
 
@@ -63,7 +63,7 @@ class DME_TeleportLoadingScreen
             m_Background.SetImage(0);
         }
 
-        m_StartTime = GetGame().GetTime();
+        m_StartTime = g_Game.GetTime();
         m_EndTime = m_StartTime + safeDuration;
         m_FadeStartTime = m_EndTime - FADE_DURATION_MS;
         m_IsVisible = true;
@@ -75,11 +75,11 @@ class DME_TeleportLoadingScreen
         m_Root.SetAlpha(1.0);
         m_Root.Show(true);
 
-        if (GetGame().GetMission() && GetGame().GetMission().GetHud())
-            GetGame().GetMission().GetHud().Show(false);
+        if (g_Game.GetMission() && g_Game.GetMission().GetHud())
+            g_Game.GetMission().GetHud().Show(false);
 
-        if (GetGame().GetSoundScene())
-            GetGame().GetSoundScene().SetSoundVolume(0, 0);
+        if (g_Game.GetSoundScene())
+            g_Game.GetSoundScene().SetSoundVolume(0, 0);
     }
 
     void Update()
@@ -87,7 +87,7 @@ class DME_TeleportLoadingScreen
         if (!m_IsVisible || !m_Root)
             return;
 
-        int currentTime = GetGame().GetTime();
+        int currentTime = g_Game.GetTime();
         float progress = Math.InverseLerp(m_StartTime, m_EndTime, currentTime) * 100.0;
         progress = Math.Clamp(progress, 0.0, 100.0);
 
@@ -121,14 +121,14 @@ class DME_TeleportLoadingScreen
         m_Root.SetAlpha(1.0);
         m_Root.Show(false);
 
-        if (GetGame().GetMission() && GetGame().GetMission().GetHud())
-            GetGame().GetMission().GetHud().Show(true);
+        if (g_Game.GetMission() && g_Game.GetMission().GetHud())
+            g_Game.GetMission().GetHud().Show(true);
     }
 
     protected void RestoreSound()
     {
-        if (GetGame().GetSoundScene())
-            GetGame().GetSoundScene().SetSoundVolume(g_Game.m_volume_sound, 1);
+        if (g_Game.GetSoundScene())
+            g_Game.GetSoundScene().SetSoundVolume(g_Game.m_volume_sound, 1);
     }
 
     protected void PreloadObjects(string preloadObjectTypes, int durationMs)
@@ -161,7 +161,7 @@ class DME_TeleportPlayerMarker
     {
         m_PlayerName = playerName;
         m_WorldPosition = worldPosition;
-        m_ExpireTime = GetGame().GetTime() + durationMs;
+        m_ExpireTime = g_Game.GetTime() + durationMs;
     }
 
     void EnsureLayout()
@@ -169,7 +169,7 @@ class DME_TeleportPlayerMarker
         if (m_Root)
             return;
 
-        m_Root = GetGame().GetWorkspace().CreateWidgets("DME_Teleport_Overhaul/gui/layouts/dme_teleport_player_marker.layout");
+        m_Root = g_Game.GetWorkspace().CreateWidgets("DME_Teleport_Overhaul/gui/layouts/dme_teleport_player_marker.layout");
         if (!m_Root)
             return;
 
@@ -197,7 +197,7 @@ class DME_TeleportPlayerMarker
     {
         m_PlayerName = playerName;
         m_WorldPosition = worldPosition;
-        m_ExpireTime = GetGame().GetTime() + durationMs;
+        m_ExpireTime = g_Game.GetTime() + durationMs;
 
         if (m_NameText)
             m_NameText.SetText(GetMarkerLabel());
@@ -209,13 +209,13 @@ class DME_TeleportPlayerMarker
         if (!m_Root)
             return false;
 
-        if (GetGame().GetTime() >= m_ExpireTime)
+        if (g_Game.GetTime() >= m_ExpireTime)
         {
             Destroy();
             return false;
         }
 
-        PlayerBase localPlayer = PlayerBase.Cast(GetGame().GetPlayer());
+        PlayerBase localPlayer = PlayerBase.Cast(g_Game.GetPlayer());
         if (!localPlayer || !localPlayer.IsAlive())
         {
             m_Root.Show(false);
@@ -262,7 +262,7 @@ class DME_TeleportPortalEffect
     void DME_TeleportPortalEffect(vector worldPosition, int durationMs, string soundSet)
     {
         m_WorldPosition = worldPosition;
-        m_ExpireTime = GetGame().GetTime() + durationMs;
+        m_ExpireTime = g_Game.GetTime() + durationMs;
 
         m_Particle = Particle.PlayInWorld(ParticleList.DME_OVERHAUL_TELEPORT_PTC, m_WorldPosition);
 
@@ -276,7 +276,7 @@ class DME_TeleportPortalEffect
 
     bool Update()
     {
-        if (GetGame().GetTime() < m_ExpireTime)
+        if (g_Game.GetTime() < m_ExpireTime)
             return true;
 
         Destroy();
@@ -295,7 +295,7 @@ class DME_TeleportPortalEffect
             return;
 
         m_Particle.Stop();
-        GetGame().ObjectDelete(m_Particle);
+        g_Game.ObjectDelete(m_Particle);
         m_Particle = null;
     }
 }
@@ -304,7 +304,6 @@ modded class MissionGameplay
 {
     protected ref DME_TeleportLoadingScreen m_DME_TeleportLoadingScreen;
 	private ref DME_TeleportMenu m_DMETeleportMenu;
-	private bool m_DMETeleportMenuOpen;
     protected ref array<ref DME_TeleportPlayerMarker> m_DME_TeleportMarkers;
     protected ref array<ref DME_TeleportPortalEffect> m_DME_TeleportParticles;
 
@@ -321,11 +320,9 @@ modded class MissionGameplay
         if (!m_DME_TeleportParticles)
             m_DME_TeleportParticles = new array<ref DME_TeleportPortalEffect>;
 
-		m_DMETeleportMenuOpen = false;
-
-        GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, this, SingeplayerExecutionType.Client);
-		GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_MARKER, this, SingeplayerExecutionType.Client);
-        GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_PARTICLE, this, SingeplayerExecutionType.Client);
+        GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, this, SingleplayerExecutionType.Client);
+		GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_MARKER, this, SingleplayerExecutionType.Client);
+        GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_PARTICLE, this, SingleplayerExecutionType.Client);
     }
 
     override void OnUpdate(float timeslice)
@@ -337,6 +334,7 @@ modded class MissionGameplay
 
 		UpdateTeleportMarkers();
 		UpdateTeleportParticles();
+		HandleDMETeleportMenuInput();
     }
 
     override void OnMissionFinish()
@@ -348,51 +346,55 @@ modded class MissionGameplay
         super.OnMissionFinish();
     }
 
-    override void OnKeyPress(int key)
+    // Menu key is a regular input (scripts/data/Inputs.xml, default F2), players rebind it in Options > Controls
+    private void HandleDMETeleportMenuInput()
     {
-        super.OnKeyPress(key);
+        UAInput toggleInput = GetUApi().GetInputByName(DME_Teleport_Constants.INPUT_MENU_TOGGLE);
+        if (!toggleInput || !toggleInput.LocalPress())
+            return;
 
-        if (key == KeyCode.KC_F2)
+        if (IsDMETeleportMenuOpen())
         {
-            if (m_DMETeleportMenuOpen)
-            {
-                CloseDMETeleportMenu();
-                return;
-            }
-
-            UIScriptedMenu topMenu = GetGame().GetUIManager().GetMenu();
-            if (topMenu)
-                return;
-
-            OpenDMETeleportMenu();
+            CloseDMETeleportMenu();
+            return;
         }
+
+        if (g_Game.GetUIManager().GetMenu())
+            return;
+
+        OpenDMETeleportMenu();
+    }
+
+    // The menu can also close itself (Escape, close button, successful travel), so ask the UI manager instead of tracking a flag
+    private bool IsDMETeleportMenuOpen()
+    {
+        if (!m_DMETeleportMenu)
+            return false;
+
+        return g_Game.GetUIManager().GetMenu() == m_DMETeleportMenu;
     }
 
     private void OpenDMETeleportMenu()
     {
-        if (m_DMETeleportMenuOpen)
+        if (IsDMETeleportMenuOpen())
             return;
 
-        PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
+        PlayerBase player = PlayerBase.Cast(g_Game.GetPlayer());
         if (!player || !player.IsAlive())
             return;
 
         if (!m_DMETeleportMenu)
             m_DMETeleportMenu = new DME_TeleportMenu();
 
-        GetGame().GetUIManager().ShowScriptedMenu(m_DMETeleportMenu, null);
-        m_DMETeleportMenuOpen = true;
+        g_Game.GetUIManager().ShowScriptedMenu(m_DMETeleportMenu, null);
     }
 
     private void CloseDMETeleportMenu()
     {
-        if (!m_DMETeleportMenuOpen)
+        if (!IsDMETeleportMenuOpen())
             return;
 
-        if (m_DMETeleportMenu)
-            GetGame().GetUIManager().HideScriptedMenu(m_DMETeleportMenu);
-
-        m_DMETeleportMenuOpen = false;
+        g_Game.GetUIManager().HideScriptedMenu(m_DMETeleportMenu);
     }
 
     void ShowTeleportLoadingScreen(CallType type, ParamsReadContext ctx, PlayerIdentity sender, Object target)

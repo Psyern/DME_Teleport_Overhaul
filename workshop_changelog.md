@@ -1,5 +1,21 @@
 # DME Teleport Overhaul — Changelog
 
+## 🔧 DayZ 1.30 Update
+
+### Controls
+- The teleport menu key is no longer hardcoded: it is a regular DayZ input now and can be rebound under Options → Controls → "DME Teleport" (default stays F2)
+- Fixed: after closing the menu with Escape, the close button or a successful teleport, the key had to be pressed twice to open it again
+
+### Localization
+- Fixed: Simplified Chinese texts were not displayed correctly — `stringtable.csv` now uses the exact vanilla layout (quoted cells, trailing comma after the last column)
+- The Traditional Chinese column now contains Traditional characters instead of Simplified ones
+- New strings for the controls menu entry in all 13 languages
+
+### DayZ 1.30
+- Updated for DayZ 1.30 (`g_Game` instead of the deprecated `GetGame()`, no `ref` on local variables and return types, CF RPC enum without the legacy typo)
+- Config files are loaded and saved with `JsonFileLoader.LoadFile/SaveFile` (the old `JsonLoadFile/JsonSaveFile` are deprecated); load errors are written to the server log
+- Fixed: teleport configs were read only up to the first empty line
+
 ## 🚀 Full Overhaul Release
 
 ### Teleport Systems

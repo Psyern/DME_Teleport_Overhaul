@@ -1,6 +1,6 @@
 # 🚪 DME_Teleport_Overhaul — DayZ Mod
 
-[![DayZ](https://img.shields.io/badge/DayZ-1.29+-blue)](https://dayz.com)
+[![DayZ](https://img.shields.io/badge/DayZ-1.30%20%7C%201.29-blue)](https://dayz.com)
 [![Enforce Script](https://img.shields.io/badge/Enforce-Script-orange)](https://community.bistudio.com/wiki/DayZ:Enforce_Script_Syntax)
 [![Maintainer](https://img.shields.io/badge/Maintainer-Psyern-green)](https://github.com/Psyern)
 
@@ -9,7 +9,7 @@
 ## ✨ Features
 
 - World interaction teleports placed through configured objects
-- F2 teleport menu with destination cards, cooldowns, and configurable economy/payment support
+- F2 teleport menu with destination cards, cooldowns, and configurable economy/payment support — F2 is only the default, players can rebind it under Options → Controls → "DME Teleport"
 - Optional temporary player-name marker for GUI teleports
 - Static source/destination portal particles with one-shot teleport sounds
 - Full-screen loading screen with random `.edds` backgrounds and progress bar

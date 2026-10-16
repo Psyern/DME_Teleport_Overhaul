@@ -25,7 +25,7 @@ class DME_Teleport_Overhaul
 
     static void EnsureDirectories()
     {
-        ref array<string> directories = { "$profile:DeadmansEcho", ROOT_DIRECTORY, LOG_DIRECTORY };
+        array<string> directories = { "$profile:DeadmansEcho", ROOT_DIRECTORY, LOG_DIRECTORY };
 
         foreach (string directory : directories)
         {
@@ -62,6 +62,7 @@ class DME_Teleport_Overhaul
 class DME_Teleport_Constants
 {
     static const int DME_TELEPORT_MENU = 35002;
+    static const string INPUT_MENU_TOGGLE = "UADMETeleportMenuToggle";
     static const int ECONOMY_MODE_NONE = 0;
     static const int ECONOMY_MODE_HARDLINE_MIN_REP = 1;
     static const int ECONOMY_MODE_HARDLINE_COST = 2;

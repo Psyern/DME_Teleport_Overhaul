@@ -24,7 +24,7 @@ class DME_TeleportDestRow
 		if (RemainingSeconds <= 0)
 			return 0;
 
-		float elapsed = GetGame().GetTickTime() - ClientTimestamp;
+		float elapsed = g_Game.GetTickTime() - ClientTimestamp;
 		int remaining = RemainingSeconds - (int) elapsed;
 		if (remaining < 0)
 			remaining = 0;
@@ -77,7 +77,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 
 	override Widget Init()
 	{
-		layoutRoot = GetGame().GetWorkspace().CreateWidgets(LAYOUT_PATH);
+		layoutRoot = g_Game.GetWorkspace().CreateWidgets(LAYOUT_PATH);
 		if (layoutRoot)
 		{
 			m_RootFrame = layoutRoot;
@@ -105,8 +105,17 @@ class DME_TeleportMenu extends UIScriptedMenu
 	{
 		super.OnShow();
 		SetFocus(layoutRoot);
-		GetGame().GetInput().ChangeGameFocus(1);
-		GetGame().GetUIManager().ShowUICursor(true);
+		g_Game.GetInput().ChangeGameFocus(1);
+		g_Game.GetUIManager().ShowUICursor(true);
+
+		// keep the menu key active while the menu has focus, so the same key closes it again
+		UAInput toggleInput = GetUApi().GetInputByName(DME_Teleport_Constants.INPUT_MENU_TOGGLE);
+		if (toggleInput)
+		{
+			toggleInput.ForceDisable(false);
+			GetUApi().UpdateControls();
+		}
+
 		GetRPCManager().SendRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_REQUEST, null, true);
 
 		if (m_StatusText)
@@ -116,8 +125,8 @@ class DME_TeleportMenu extends UIScriptedMenu
 	override void OnHide()
 	{
 		super.OnHide();
-		GetGame().GetInput().ChangeGameFocus(-1);
-		GetGame().GetUIManager().ShowUICursor(false);
+		g_Game.GetInput().ChangeGameFocus(-1);
+		g_Game.GetUIManager().ShowUICursor(false);
 	}
 
 	override bool OnClick(Widget w, int x, int y, int button)
@@ -198,7 +207,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 
 		TStringArray entries = new TStringArray;
 		serialized.Split(";", entries);
-		float nowTick = GetGame().GetTickTime();
+		float nowTick = g_Game.GetTickTime();
 
 		for (int i = 0; i < entries.Count(); i++)
 		{
@@ -253,7 +262,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 
 		if (success)
 		{
-			float nowTick = GetGame().GetTickTime();
+			float nowTick = g_Game.GetTickTime();
 			for (int i = 0; i < m_Rows.Count(); i++)
 			{
 				DME_TeleportDestRow row = m_Rows[i];
@@ -279,7 +288,7 @@ class DME_TeleportMenu extends UIScriptedMenu
 		if (!m_DestinationList)
 			return;
 
-		Widget rowWidget = GetGame().GetWorkspace().CreateWidgets(ROW_LAYOUT_PATH, m_DestinationList);
+		Widget rowWidget = g_Game.GetWorkspace().CreateWidgets(ROW_LAYOUT_PATH, m_DestinationList);
 		if (!rowWidget)
 			return;
 

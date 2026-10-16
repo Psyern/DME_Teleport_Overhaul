@@ -15,14 +15,14 @@ class DME_TeleportManager
 		GetRPCManager().AddRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.TRAVEL_REQUEST, this, SingleplayerExecutionType.Server);
 		GetRPCManager().AddRPC(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_REQUEST, this, SingleplayerExecutionType.Server);
 
-		if (GetGame().IsServer())
+		if (g_Game.IsServer())
 		{
 			m_Config = DME_TeleportConfigLoader.Load();
 			m_ProhibitedZonesConfig = DME_ProhibitedZonesConfigLoader.Load();
 			m_GlobalMenuPreloadObjectTypes = DME_OverhaulJsonConfigManager.GetSerializedGlobalPreloadObjectTypes();
 		}
 
-		Print("[DME_Teleport_Menu] Manager initialized (server=" + GetGame().IsServer().ToString() + ").");
+		Print("[DME_Teleport_Menu] Manager initialized (server=" + g_Game.IsServer().ToString() + ").");
 	}
 
 	static DME_TeleportManager GetInstance()
@@ -48,7 +48,7 @@ class DME_TeleportManager
 
 		string destName = data.param1;
 		string uid = sender.GetId();
-		int nowMS = GetGame().GetTime();
+		int nowMS = g_Game.GetTime();
 
 		if (m_LastRequestTime.Contains(uid))
 		{
@@ -123,11 +123,11 @@ class DME_TeleportManager
 
 		vector pos = dest.GetPosition();
 		if (pos[1] == 0)
-			pos[1] = GetGame().SurfaceY(pos[0], pos[2]);
+			pos[1] = g_Game.SurfaceY(pos[0], pos[2]);
 
 		vector safePos = DME_OverhaulTeleportHelper.GetSafeTeleportPosition(pos, true);
 		BroadcastTeleportPortalEffect(markerPosition, DME_Teleport_Overhaul.GUI_TELEPORT_PARTICLE_DURATION_MS, DME_Teleport_Overhaul.GUI_TELEPORT_SOUND_SET);
-		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(ExecuteDelayedGUITeleport, DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS, false, sender, player, safePos, dest.TeleportName, dest.Marker, markerPosition);
+		g_Game.GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(ExecuteDelayedGUITeleport, DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS, false, sender, player, safePos, dest.TeleportName, dest.Marker, markerPosition);
 
 		int updatedRep = GetPlayerEconomyValue(player);
 		Print("[DME_Teleport_Menu] Scheduled GUI teleport for " + sender.GetName() + " (" + uid + ") to " + destName + " at " + safePos.ToString() + " after " + DME_Teleport_Overhaul.GUI_TELEPORT_DELAY_MS.ToString() + "ms.");
@@ -142,7 +142,7 @@ class DME_TeleportManager
 		DME_OverhaulTeleportHelper.BeginTeleportTransition(player, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS);
 		GetRPCManager().SendRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, new Param2<int, string>(DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS, m_GlobalMenuPreloadObjectTypes), true, identity);
 		DME_OverhaulTeleportHelper.TeleportPlayerWithSafety(player, safePos, destName, 0, true);
-		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(BroadcastTeleportPortalEffect, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS - DME_Teleport_Overhaul.TELEPORT_ARRIVAL_EFFECT_LEAD_MS, false, safePos, DME_Teleport_Overhaul.TELEPORT_ARRIVAL_EFFECT_DURATION_MS, DME_Teleport_Overhaul.GUI_TELEPORT_OUT_SOUND_SET);
+		g_Game.GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(BroadcastTeleportPortalEffect, DME_Teleport_Overhaul.LOADING_SCREEN_DURATION_MS - DME_Teleport_Overhaul.TELEPORT_ARRIVAL_EFFECT_LEAD_MS, false, safePos, DME_Teleport_Overhaul.TELEPORT_ARRIVAL_EFFECT_DURATION_MS, DME_Teleport_Overhaul.GUI_TELEPORT_OUT_SOUND_SET);
 
 		if (shouldBroadcastMarker == 1 && identity.GetName() != string.Empty)
 			BroadcastGUITeleportMarker(identity.GetName(), markerPosition);
@@ -250,7 +250,7 @@ class DME_TeleportManager
 
 		vector destinationPosition = dest.GetPosition();
 		if (destinationPosition[1] == 0)
-			destinationPosition[1] = GetGame().SurfaceY(destinationPosition[0], destinationPosition[2]);
+			destinationPosition[1] = g_Game.SurfaceY(destinationPosition[0], destinationPosition[2]);
 
 		if (IsPositionInsideProhibitedZone(destinationPosition, true, errorMsg))
 			return true;
@@ -525,7 +525,7 @@ class DME_TeleportManager
 				if (itemAmount <= remaining)
 				{
 					remaining = remaining - itemAmount;
-					GetGame().ObjectDelete(item);
+					g_Game.ObjectDelete(item);
 				}
 				else
 				{
@@ -536,7 +536,7 @@ class DME_TeleportManager
 			else
 			{
 				remaining = remaining - 1;
-				GetGame().ObjectDelete(item);
+				g_Game.ObjectDelete(item);
 			}
 		}
 

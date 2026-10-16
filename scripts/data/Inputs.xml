@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<modded_inputs>
+	<inputs>
+		<actions>
+			<input name="UADMETeleportMenuToggle" loc="STR_DME_TELEPORT_INPUT_MENU_TOGGLE" />
+		</actions>
+		<sorting name="dme_teleport" loc="STR_DME_TELEPORT_INPUT_GROUP">
+			<input name="UADMETeleportMenuToggle" />
+		</sorting>
+	</inputs>
+	<preset>
+		<input name="UADMETeleportMenuToggle">
+			<btn name="kF2" />
+		</input>
+	</preset>
+</modded_inputs>

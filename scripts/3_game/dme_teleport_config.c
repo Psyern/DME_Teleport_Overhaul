@@ -53,16 +53,18 @@ class DME_TeleportConfig
 
 class DME_TeleportConfigLoader
 {
-	static ref DME_TeleportConfig Load()
+	static DME_TeleportConfig Load()
 	{
 		string file = DME_Teleport_Constants.CONFIG_FILE;
 		EnsureDirectories();
 
-		ref DME_TeleportConfig config;
+		DME_TeleportConfig config;
 		if (FileExist(file))
 		{
 			config = new DME_TeleportConfig();
-			JsonFileLoader<DME_TeleportConfig>.JsonLoadFile(file, config);
+			string loadError;
+			if (!JsonFileLoader<DME_TeleportConfig>.LoadFile(file, config, loadError))
+				Print("[DME_Teleport_Menu] " + loadError);
 
 			bool migrated;
 			if (config && config.Version < 2 && config.RepMode == 0)
@@ -182,7 +184,9 @@ class DME_TeleportConfigLoader
 	static void Save(DME_TeleportConfig config)
 	{
 		EnsureDirectories();
-		JsonFileLoader<DME_TeleportConfig>.JsonSaveFile(DME_Teleport_Constants.CONFIG_FILE, config);
+		string saveError;
+		if (!JsonFileLoader<DME_TeleportConfig>.SaveFile(DME_Teleport_Constants.CONFIG_FILE, config, saveError))
+			Print("[DME_Teleport_Menu] " + saveError);
 	}
 
 	static void EnsureDirectories()
@@ -190,9 +194,9 @@ class DME_TeleportConfigLoader
 		DME_Teleport_Overhaul.EnsureDirectories();
 	}
 
-	static ref DME_TeleportConfig CreateDefaults()
+	static DME_TeleportConfig CreateDefaults()
 	{
-		ref DME_TeleportConfig config = new DME_TeleportConfig();
+		DME_TeleportConfig config = new DME_TeleportConfig();
 		config.Version = 5;
 		config.RepMode = 1;
 		#ifdef EXPANSIONMODHARDLINE
@@ -203,7 +207,7 @@ class DME_TeleportConfigLoader
 		config.CurrencyClassName = string.Empty;
 		config.CurrencyDisplayName = "#STR_DME_TELEPORT_BALANCE";
 
-		ref DME_TeleportDestination greenMtn = new DME_TeleportDestination();
+		DME_TeleportDestination greenMtn = new DME_TeleportDestination();
 		greenMtn.TeleportName = "Green Mountain";
 		greenMtn.TeleportPos = { 3700.51, 0.0, 5981.27 };
 		greenMtn.Cost = 1200;
@@ -211,7 +215,7 @@ class DME_TeleportConfigLoader
 		greenMtn.Picture = 1;
 		greenMtn.Marker = 1;
 
-		ref DME_TeleportDestination krasno = new DME_TeleportDestination();
+		DME_TeleportDestination krasno = new DME_TeleportDestination();
 		krasno.TeleportName = "Krasno Airfield";
 		krasno.TeleportPos = { 11880.40, 0.0, 12460.74 };
 		krasno.Cost = 1800;

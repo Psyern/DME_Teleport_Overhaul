@@ -26,9 +26,9 @@ class DME_ProhibitedTeleportZone
 		return PolygonZoneEnable && PolygonVectors && PolygonVectors.Count() >= 3;
 	}
 
-	ref array<vector> GetPolygonPositions()
+	array<vector> GetPolygonPositions()
 	{
-		ref array<vector> positions = new array<vector>;
+		array<vector> positions = new array<vector>;
 
 		if (!PolygonVectors)
 			return positions;
@@ -62,16 +62,18 @@ class DME_ProhibitedZonesConfigLoader
 {
 	static const int CURRENT_VERSION_ID = 1;
 
-	static ref DME_ProhibitedZonesConfig Load()
+	static DME_ProhibitedZonesConfig Load()
 	{
 		string filePath = DME_Teleport_Constants.PROHIBITED_ZONES_FILE;
 		EnsureDirectories();
 
-		ref DME_ProhibitedZonesConfig config;
+		DME_ProhibitedZonesConfig config;
 		if (FileExist(filePath))
 		{
 			config = new DME_ProhibitedZonesConfig();
-			JsonFileLoader<DME_ProhibitedZonesConfig>.JsonLoadFile(filePath, config);
+			string loadError;
+			if (!JsonFileLoader<DME_ProhibitedZonesConfig>.LoadFile(filePath, config, loadError))
+				Print("[DME_Teleport_Menu] " + loadError);
 
 			if (!config)
 				config = new DME_ProhibitedZonesConfig();
@@ -96,7 +98,9 @@ class DME_ProhibitedZonesConfigLoader
 	static void Save(DME_ProhibitedZonesConfig config)
 	{
 		EnsureDirectories();
-		JsonFileLoader<DME_ProhibitedZonesConfig>.JsonSaveFile(DME_Teleport_Constants.PROHIBITED_ZONES_FILE, config);
+		string saveError;
+		if (!JsonFileLoader<DME_ProhibitedZonesConfig>.SaveFile(DME_Teleport_Constants.PROHIBITED_ZONES_FILE, config, saveError))
+			Print("[DME_Teleport_Menu] " + saveError);
 	}
 
 	static void EnsureDirectories()
@@ -104,9 +108,9 @@ class DME_ProhibitedZonesConfigLoader
 		DME_Teleport_Overhaul.EnsureDirectories();
 	}
 
-	static ref DME_ProhibitedZonesConfig CreateDefaults()
+	static DME_ProhibitedZonesConfig CreateDefaults()
 	{
-		ref DME_ProhibitedZonesConfig config = new DME_ProhibitedZonesConfig();
+		DME_ProhibitedZonesConfig config = new DME_ProhibitedZonesConfig();
 		config.VersionID = CURRENT_VERSION_ID;
 		EnsureExampleZones(config);
 		return config;
@@ -128,9 +132,9 @@ class DME_ProhibitedZonesConfigLoader
 		return true;
 	}
 
-	protected static ref DME_ProhibitedTeleportZone CreateExampleRadiusZone()
+	protected static DME_ProhibitedTeleportZone CreateExampleRadiusZone()
 	{
-		ref DME_ProhibitedTeleportZone zone = new DME_ProhibitedTeleportZone();
+		DME_ProhibitedTeleportZone zone = new DME_ProhibitedTeleportZone();
 		zone.POI = { 2731.57, 0.0, 1255.94 };
 		zone.Radius = 250;
 		zone.WarningMessage = "#STR_DME_TELEPORT_WARNING_RADIUS_EXAMPLE";
@@ -138,9 +142,9 @@ class DME_ProhibitedZonesConfigLoader
 		return zone;
 	}
 
-	protected static ref DME_ProhibitedTeleportZone CreateExamplePolygonZone()
+	protected static DME_ProhibitedTeleportZone CreateExamplePolygonZone()
 	{
-		ref DME_ProhibitedTeleportZone zone = new DME_ProhibitedTeleportZone();
+		DME_ProhibitedTeleportZone zone = new DME_ProhibitedTeleportZone();
 		zone.WarningMessage = "#STR_DME_TELEPORT_WARNING_POLYGON_EXAMPLE";
 		zone.PolygonZoneEnable = true;
 		zone.PolygonVectors.Insert({ 3616.18, 0.0, 2041.39 });
