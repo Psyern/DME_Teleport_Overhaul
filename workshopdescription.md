@@ -13,7 +13,7 @@ Built for server owners who want a more polished teleport experience with better
 
 [list]
 [*][b]World Teleports[/b] – Trigger teleports through configured world objects and interaction points
-[*][b]F2 Teleport Menu[/b] – Open a full teleport UI with destination cards, images, cooldowns and travel actions
+[*][b]F2 Teleport Menu[/b] – Open a full teleport UI with destination cards, images, cooldowns and travel actions. F2 is the default key, rebind it under Options → Controls → "DME Teleport"
 [*][b]Economy Support[/b] – Use free travel, Hardline reputation checks, Hardline reputation cost or item-based payment
 [*][b]Destination Cooldowns[/b] – Configure cooldowns per destination with live countdowns in the menu
 [*][b]Player Markers[/b] – Optional temporary markers show where a player teleported from after GUI travel

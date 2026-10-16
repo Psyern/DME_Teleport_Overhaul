@@ -304,7 +304,6 @@ modded class MissionGameplay
 {
     protected ref DME_TeleportLoadingScreen m_DME_TeleportLoadingScreen;
 	private ref DME_TeleportMenu m_DMETeleportMenu;
-	private bool m_DMETeleportMenuOpen;
     protected ref array<ref DME_TeleportPlayerMarker> m_DME_TeleportMarkers;
     protected ref array<ref DME_TeleportPortalEffect> m_DME_TeleportParticles;
 
@@ -321,12 +320,10 @@ modded class MissionGameplay
         if (!m_DME_TeleportParticles)
             m_DME_TeleportParticles = new array<ref DME_TeleportPortalEffect>;
 
-		m_DMETeleportMenuOpen = false;
-
         // CF on purpose: this namespace is also sent by the third-party action teleport (actionteleportplayer.c)
-        GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, this, SingeplayerExecutionType.Client);
-		GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_MARKER, this, SingeplayerExecutionType.Client);
-        GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_PARTICLE, this, SingeplayerExecutionType.Client);
+        GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_LOADING_SCREEN, this, SingleplayerExecutionType.Client);
+		GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_MARKER, this, SingleplayerExecutionType.Client);
+        GetRPCManager().AddRPC(DME_Teleport_Overhaul.RPC_NAMESPACE, DME_Teleport_Overhaul.RPC_SHOW_TELEPORT_PARTICLE, this, SingleplayerExecutionType.Client);
     }
 
     override void OnUpdate(float timeslice)
@@ -338,6 +335,7 @@ modded class MissionGameplay
 
 		UpdateTeleportMarkers();
 		UpdateTeleportParticles();
+		HandleDMETeleportMenuInput();
     }
 
     override void OnMissionFinish()
@@ -349,29 +347,37 @@ modded class MissionGameplay
         super.OnMissionFinish();
     }
 
-    override void OnKeyPress(int key)
+    // Menu key is a regular input (scripts/data/Inputs.xml, default F2), players rebind it in Options > Controls
+    private void HandleDMETeleportMenuInput()
     {
-        super.OnKeyPress(key);
+        UAInput toggleInput = GetUApi().GetInputByName(DME_Teleport_Constants.INPUT_MENU_TOGGLE);
+        if (!toggleInput || !toggleInput.LocalPress())
+            return;
 
-        if (key == KeyCode.KC_F2)
+        if (IsDMETeleportMenuOpen())
         {
-            if (m_DMETeleportMenuOpen)
-            {
-                CloseDMETeleportMenu();
-                return;
-            }
-
-            UIScriptedMenu topMenu = g_Game.GetUIManager().GetMenu();
-            if (topMenu)
-                return;
-
-            OpenDMETeleportMenu();
+            CloseDMETeleportMenu();
+            return;
         }
+
+        if (g_Game.GetUIManager().GetMenu())
+            return;
+
+        OpenDMETeleportMenu();
+    }
+
+    // The menu can also close itself (Escape, close button, successful travel), so ask the UI manager instead of tracking a flag
+    private bool IsDMETeleportMenuOpen()
+    {
+        if (!m_DMETeleportMenu)
+            return false;
+
+        return g_Game.GetUIManager().GetMenu() == m_DMETeleportMenu;
     }
 
     private void OpenDMETeleportMenu()
     {
-        if (m_DMETeleportMenuOpen)
+        if (IsDMETeleportMenuOpen())
             return;
 
         PlayerBase player = PlayerBase.Cast(g_Game.GetPlayer());
@@ -382,18 +388,14 @@ modded class MissionGameplay
             m_DMETeleportMenu = new DME_TeleportMenu();
 
         g_Game.GetUIManager().ShowScriptedMenu(m_DMETeleportMenu, null);
-        m_DMETeleportMenuOpen = true;
     }
 
     private void CloseDMETeleportMenu()
     {
-        if (!m_DMETeleportMenuOpen)
+        if (!IsDMETeleportMenuOpen())
             return;
 
-        if (m_DMETeleportMenu)
-            g_Game.GetUIManager().HideScriptedMenu(m_DMETeleportMenu);
-
-        m_DMETeleportMenuOpen = false;
+        g_Game.GetUIManager().HideScriptedMenu(m_DMETeleportMenu);
     }
 
     void ShowTeleportLoadingScreen(CallType type, ParamsReadContext ctx, PlayerIdentity sender, Object target)

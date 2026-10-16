@@ -61,6 +61,7 @@ class DME_Teleport_Constants
 {
     // was 35002 (collided with DME_Custom_Events); first id of the reserved PsyCore block
     static const int DME_TELEPORT_MENU = PsyCore_Ids.MENU_DME_TELEPORT;
+    static const string INPUT_MENU_TOGGLE = "UADMETeleportMenuToggle";
     static const int ECONOMY_MODE_NONE = 0;
     static const int ECONOMY_MODE_HARDLINE_MIN_REP = 1;
     static const int ECONOMY_MODE_HARDLINE_COST = 2;

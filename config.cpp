@@ -33,6 +33,7 @@ class CfgMods
 		version=1;
 		extra=0;
 		type="mod";
+		inputs="DME_Teleport_Overhaul/scripts/data/Inputs.xml";
 		dependencies[]=
 		{
 			"Game",

@@ -144,7 +144,9 @@ class DME_ProhibitedZonesConfigLoader
 	static void Save(DME_ProhibitedZonesConfig config)
 	{
 		EnsureDirectories();
-		JsonFileLoader<DME_ProhibitedZonesConfig>.JsonSaveFile(DME_Teleport_Constants.PROHIBITED_ZONES_FILE, config);
+		string saveError;
+		if (!JsonFileLoader<DME_ProhibitedZonesConfig>.SaveFile(DME_Teleport_Constants.PROHIBITED_ZONES_FILE, config, saveError))
+			Print("[DME_Teleport_Menu] " + saveError);
 	}
 
 	static void EnsureDirectories()

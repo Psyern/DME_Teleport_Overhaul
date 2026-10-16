@@ -108,6 +108,15 @@ class DME_TeleportMenu extends UIScriptedMenu
 		SetFocus(layoutRoot);
 		g_Game.GetInput().ChangeGameFocus(1);
 		g_Game.GetUIManager().ShowUICursor(true);
+
+		// keep the menu key active while the menu has focus, so the same key closes it again
+		UAInput toggleInput = GetUApi().GetInputByName(DME_Teleport_Constants.INPUT_MENU_TOGGLE);
+		if (toggleInput)
+		{
+			toggleInput.ForceDisable(false);
+			GetUApi().UpdateControls();
+		}
+
 		PsyCore_RPC.SendEmpty(DME_Teleport_RPC.MOD_NAME, DME_Teleport_RPC.SYNC_REQUEST, true);
 
 		if (m_StatusText)

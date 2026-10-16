@@ -2,7 +2,7 @@ class DME_OverhaulJsonConfigManager
 {
 	static const int CURRENT_PRELOAD_CONFIG_VERSION = 1;
 
-    static ref array<string> GetDefaultTeleportPreloadObjectTypes()
+    static array<string> GetDefaultTeleportPreloadObjectTypes()
     {
         return {
             "StaticObj_Underground_Corridor_Main_Gate_R",
@@ -12,34 +12,16 @@ class DME_OverhaulJsonConfigManager
         };
     }
 
-    static ref DME_OverhaulTeleportPreloadConfig LoadTeleportPreloadConfig()
+    static DME_OverhaulTeleportPreloadConfig LoadTeleportPreloadConfig()
     {
         string error;
-        ref DME_OverhaulTeleportPreloadConfig config = new DME_OverhaulTeleportPreloadConfig();
+        DME_OverhaulTeleportPreloadConfig config = new DME_OverhaulTeleportPreloadConfig();
 
         string configFilePath = DME_Teleport_Overhaul.PRELOAD_CONFIG_FILE;
         if (FileExist(configFilePath))
         {
-            string jsonContent;
-            string line;
-            FileHandle file = OpenFile(configFilePath, FileMode.READ);
-            if (file != -1)
-            {
-                while (FGets(file, line) > 0)
-                {
-                    jsonContent += line;
-                }
-
-                CloseFile(file);
-
-                JsonSerializer json = new JsonSerializer();
-                json.ReadFromString(config, jsonContent, error);
-            }
-            else
-            {
-                Print("Failed to open the teleport preload config file!");
-                Print(error);
-            }
+            if (!JsonFileLoader<DME_OverhaulTeleportPreloadConfig>.LoadFile(configFilePath, config, error))
+                Print("[DME_Teleport_Overhaul] " + error);
         }
         else
         {
@@ -58,36 +40,17 @@ class DME_OverhaulJsonConfigManager
     }
 
     // Метод для загрузки конфига
-    static ref DME_OverhaulTeleportConfig LoadTeleportConfig()
+    static DME_OverhaulTeleportConfig LoadTeleportConfig()
     {
         string error;
-        ref DME_OverhaulTeleportConfig config = new DME_OverhaulTeleportConfig();
+        DME_OverhaulTeleportConfig config = new DME_OverhaulTeleportConfig();
 
         string configFilePath = DME_Teleport_Overhaul.CONFIG_FILE;  // Путь к конфигу
         if (FileExist(configFilePath))
         {
-            // Чтение содержимого файла JSON
-            string jsonContent;
-            string line;
-            FileHandle file = OpenFile(configFilePath, FileMode.READ);
-            if (file != -1)  // Проверка на успешное открытие файла
-            {
-                while (FGets(file, line) > 0)  // Чтение содержимого файла
-                {
-                    // Строки добавляются в jsonContent
-                    jsonContent += line;
-                }
-                CloseFile(file);  // Закрытие файла
-
-                // Десериализация JSON в объект
-                JsonSerializer json = new JsonSerializer();
-                json.ReadFromString(config, jsonContent, error);  // Десериализация строки в объект
-            }
-            else
-            {
-                Print("Failed to open the JSON config file!");
-                Print(error);
-            }
+            // Чтение и десериализация JSON
+            if (!JsonFileLoader<DME_OverhaulTeleportConfig>.LoadFile(configFilePath, config, error))
+                Print("[DME_Teleport_Overhaul] " + error);
         }
         else
         {
@@ -108,7 +71,7 @@ class DME_OverhaulJsonConfigManager
         if (!teleportConfig || !preloadConfig)
             return;
 
-        foreach (ref DME_OverhaulTeleportEntry teleportEntry : teleportConfig.TeleportEntries)
+        foreach (DME_OverhaulTeleportEntry teleportEntry : teleportConfig.TeleportEntries)
         {
             if (!teleportEntry)
                 continue;
@@ -116,7 +79,7 @@ class DME_OverhaulJsonConfigManager
             teleportEntry.PreloadObjectTypes = new array<string>();
             InsertUniqueObjectTypes(teleportEntry.PreloadObjectTypes, preloadConfig.GlobalPreloadObjectTypes);
 
-            foreach (ref DME_OverhaulTeleportPreloadEntry preloadEntry : preloadConfig.TeleportPreloads)
+            foreach (DME_OverhaulTeleportPreloadEntry preloadEntry : preloadConfig.TeleportPreloads)
             {
                 if (!preloadEntry || preloadEntry.TeleportName != teleportEntry.TeleportName)
                     continue;
@@ -170,7 +133,7 @@ class DME_OverhaulJsonConfigManager
             changed = true;
         }
 
-        ref array<string> defaultObjectTypes = GetDefaultTeleportPreloadObjectTypes();
+        array<string> defaultObjectTypes = GetDefaultTeleportPreloadObjectTypes();
         if (config.GlobalPreloadObjectTypes.Count() == 0)
         {
             InsertUniqueObjectTypes(config.GlobalPreloadObjectTypes, defaultObjectTypes);
@@ -209,24 +172,17 @@ class DME_OverhaulJsonConfigManager
         if (!config)
             return;
 
-        string jsonContent;
-        JsonSerializer json = new JsonSerializer();
-        json.WriteToString(config, true, jsonContent);
-
         DME_Teleport_Overhaul.EnsureDirectories();
 
-        FileHandle file = OpenFile(DME_Teleport_Overhaul.PRELOAD_CONFIG_FILE, FileMode.WRITE);
-        if (file != -1)
-        {
-            FPrint(file, jsonContent);
-            CloseFile(file);
-        }
+        string error;
+        if (!JsonFileLoader<DME_OverhaulTeleportPreloadConfig>.SaveFile(DME_Teleport_Overhaul.PRELOAD_CONFIG_FILE, config, error))
+            Print("[DME_Teleport_Overhaul] " + error);
     }
 
     // Метод для создания дефолтного конфига
     static void CreateDefaultConfig()
     {
-        ref DME_OverhaulTeleportConfig defaultConfig = new DME_OverhaulTeleportConfig();
+        DME_OverhaulTeleportConfig defaultConfig = new DME_OverhaulTeleportConfig();
 
         // Пример дефолтных данных для телепорта
         DME_OverhaulTeleportEntry entry1 = new DME_OverhaulTeleportEntry();
@@ -259,30 +215,19 @@ class DME_OverhaulJsonConfigManager
         entry2.UseSurfaceSafety = true;
         defaultConfig.TeleportEntries.Insert(entry2);
 
-        // Сериализация данных в строку JSON
-        string jsonContent;
-        JsonSerializer json = new JsonSerializer();
-        json.WriteToString(defaultConfig, true, jsonContent);  // Преобразование данных в строку
-
         DME_Teleport_Overhaul.EnsureDirectories();
 
-        string configFilePath = DME_Teleport_Overhaul.CONFIG_FILE;
-        FileHandle file = OpenFile(configFilePath, FileMode.WRITE);
-        if (file != -1)  // Проверка на успешное открытие файла
-        {
-            FPrint(file, jsonContent);  // Запись в файл
-            CloseFile(file);  // Закрытие файла
+        // Сериализация и запись в файл
+        string error;
+        if (JsonFileLoader<DME_OverhaulTeleportConfig>.SaveFile(DME_Teleport_Overhaul.CONFIG_FILE, defaultConfig, error))
             Print("Default teleport config created!");
-        }
         else
-        {
-            Print("Failed to create default teleport config!");
-        }
+            Print("Failed to create default teleport config! " + error);
     }
 
     static void CreateDefaultPreloadConfig()
     {
-        ref DME_OverhaulTeleportPreloadConfig defaultConfig = new DME_OverhaulTeleportPreloadConfig();
+        DME_OverhaulTeleportPreloadConfig defaultConfig = new DME_OverhaulTeleportPreloadConfig();
 		defaultConfig.VersionID = CURRENT_PRELOAD_CONFIG_VERSION;
         InsertUniqueObjectTypes(defaultConfig.GlobalPreloadObjectTypes, GetDefaultTeleportPreloadObjectTypes());
 
@@ -295,23 +240,13 @@ class DME_OverhaulJsonConfigManager
         preloadEntry2.TeleportName = "Teleport 2";
         defaultConfig.TeleportPreloads.Insert(preloadEntry2);
 
-        string jsonContent;
-        JsonSerializer json = new JsonSerializer();
-        json.WriteToString(defaultConfig, true, jsonContent);
-
         DME_Teleport_Overhaul.EnsureDirectories();
 
-        FileHandle file = OpenFile(DME_Teleport_Overhaul.PRELOAD_CONFIG_FILE, FileMode.WRITE);
-        if (file != -1)
-        {
-            FPrint(file, jsonContent);
-            CloseFile(file);
+        string error;
+        if (JsonFileLoader<DME_OverhaulTeleportPreloadConfig>.SaveFile(DME_Teleport_Overhaul.PRELOAD_CONFIG_FILE, defaultConfig, error))
             Print("Default teleport preload config created!");
-        }
         else
-        {
-            Print("Failed to create default teleport preload config!");
-        }
+            Print("Failed to create default teleport preload config! " + error);
     }
 
     static string GetSerializedGlobalPreloadObjectTypes()
@@ -325,7 +260,7 @@ class DME_OverhaulJsonConfigManager
 
     static void SpawnTeleportPoints() {
         DME_OverhaulTeleportConfig m_TeleportConfig = LoadTeleportConfig();
-        foreach (ref DME_OverhaulTeleportEntry entry : m_TeleportConfig.TeleportEntries)
+        foreach (DME_OverhaulTeleportEntry entry : m_TeleportConfig.TeleportEntries)
         {
             if (entry.EnableTeleport)
             {

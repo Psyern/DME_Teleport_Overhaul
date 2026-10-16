@@ -1,0 +1,2 @@
+# DayZ reads stringtable.csv like vanilla: LF line endings, trailing comma after the last column
+*.csv text eol=lf
