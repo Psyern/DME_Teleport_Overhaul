@@ -306,6 +306,12 @@ modded class MissionGameplay
 	private ref DME_TeleportMenu m_DMETeleportMenu;
     protected ref array<ref DME_TeleportPlayerMarker> m_DME_TeleportMarkers;
     protected ref array<ref DME_TeleportPortalEffect> m_DME_TeleportParticles;
+    protected bool m_DME_TeleportToggleWaitRelease;
+    protected int m_DME_TeleportLastToggleTime;
+
+    // Opening the menu re-enables the toggle input (DME_TeleportMenu.OnShow); an input re-enabled while its key is
+    // still held reports a fresh press, which closed the menu on the next frame. One toggle per physical press only.
+    static const int DME_TELEPORT_TOGGLE_LOCK_MS = 500;
 
     override void OnInit()
     {
@@ -350,11 +356,40 @@ modded class MissionGameplay
     private void HandleDMETeleportMenuInput()
     {
         UAInput toggleInput = GetUApi().GetInputByName(DME_Teleport_Constants.INPUT_MENU_TOGGLE);
-        if (!toggleInput || !toggleInput.LocalPress())
+        if (!toggleInput)
             return;
+
+        // After a toggle, ignore everything until the key was released once
+        if (m_DME_TeleportToggleWaitRelease)
+        {
+            if (toggleInput.LocalPress())
+            {
+                Print("[DME_Teleport_Menu] menu key: press ignored, key not released since last toggle");
+                return;
+            }
+
+            if (toggleInput.LocalHold() || toggleInput.LocalValue() > 0)
+                return;
+
+            m_DME_TeleportToggleWaitRelease = false;
+        }
+
+        if (!toggleInput.LocalPress())
+            return;
+
+        int now = g_Game.GetTime();
+        if (now - m_DME_TeleportLastToggleTime < DME_TELEPORT_TOGGLE_LOCK_MS)
+        {
+            Print("[DME_Teleport_Menu] menu key: press ignored, within toggle lock");
+            return;
+        }
+
+        m_DME_TeleportLastToggleTime = now;
+        m_DME_TeleportToggleWaitRelease = true;
 
         if (IsDMETeleportMenuOpen())
         {
+            Print("[DME_Teleport_Menu] menu key: close");
             CloseDMETeleportMenu();
             return;
         }
@@ -362,6 +397,7 @@ modded class MissionGameplay
         if (g_Game.GetUIManager().GetMenu())
             return;
 
+        Print("[DME_Teleport_Menu] menu key: open");
         OpenDMETeleportMenu();
     }
 
