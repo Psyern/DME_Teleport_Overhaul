@@ -4,7 +4,7 @@
 		<actions>
 			<input name="UADMETeleportMenuToggle" loc="STR_DME_TELEPORT_INPUT_MENU_TOGGLE" />
 		</actions>
-		<sorting name="dme_teleport" loc="STR_DME_TELEPORT_INPUT_GROUP">
+		<sorting name="psyern" loc="Psyern's">
 			<input name="UADMETeleportMenuToggle" />
 		</sorting>
 	</inputs>
